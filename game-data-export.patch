@@ -1,0 +1,78 @@
+diff --git a/Data/Scripts/003_Game processing/001_StartGame.rb b/Data/Scripts/003_Game processing/001_StartGame.rb
+index 4eab8ac5..8a38e7d2 100644
+--- a/Data/Scripts/003_Game processing/001_StartGame.rb	
++++ b/Data/Scripts/003_Game processing/001_StartGame.rb	
+@@ -19,6 +19,73 @@ module Game
+     if $data_system.start_map_id == 0 || !pbRgssExists?(map_file)
+       raise _INTL('No starting position was set in the map editor.')
+     end
++
++    return
++    all_abilities = {}
++
++    File.open("pokemon.json", "w") do |file|
++      poke_list = $game_temp.custom_sprites_list.map do |key, val|
++        poke = GameData::Species.get(key)
++        ser_poke = {}
++        ser_poke["hp"] = poke.base_stats[:HP]
++        ser_poke["spd"] = poke.base_stats[:SPECIAL_DEFENSE]
++        ser_poke["spa"] = poke.base_stats[:SPECIAL_ATTACK]
++        ser_poke["atk"] = poke.base_stats[:ATTACK]
++        ser_poke["def"] = poke.base_stats[:DEFENSE]
++        ser_poke["spe"] = poke.base_stats[:SPEED]
++        ser_poke["bst"] =
++          poke.base_stats[:HP] +
++          poke.base_stats[:SPECIAL_DEFENSE] +
++          poke.base_stats[:SPECIAL_ATTACK] +
++          poke.base_stats[:ATTACK] +
++          poke.base_stats[:DEFENSE] +
++          poke.base_stats[:SPEED]
++        ser_poke["type1"] = poke.type1.to_s
++        ser_poke["type2"] = poke.type2.to_s
++
++        abilities = {}
++        hidden_abilities = {}
++        poke.hidden_abilities.each do |ability|
++          ability_name = GameData::Ability.get(ability).real_name
++          all_abilities[ability_name] = true
++          hidden_abilities[ability_name] = true
++        end
++        poke.abilities.each do |ability|
++          ability_name = GameData::Ability.get(ability).real_name
++          all_abilities[ability_name] = true
++          abilities[ability_name] = true
++          hidden_abilities.delete(ability_name)
++        end
++        ser_poke["abilities"] = abilities.map do |key, val|
++          key
++        end
++        ser_poke["hidden_abilities"] = hidden_abilities.map do |key, val|
++          key
++        end
++
++        if poke.is_a?(GameData::FusedSpecies)
++          ser_poke["is_fused"] = true
++          ser_poke["head_id"] = poke.id.to_s.match(/(?<=H)\d+/)[0].to_i
++          ser_poke["body_id"] = poke.id.to_s.match(/\d+/)[0].to_i
++          ser_poke["head_name"] = poke.head_pokemon.real_name
++          ser_poke["body_name"] = poke.body_pokemon.real_name
++        else
++          ser_poke["is_fused"] = false
++          ser_poke["id"] = poke.id
++          ser_poke["name"] = poke.real_name
++        end
++        ser_poke
++      end
++      file.puts HTTPLite::JSON.stringify(poke_list)
++    end
++
++    File.open("abilities.json", "w") do |file|
++      ability_list = all_abilities.map do |key, val|
++        key
++      end
++
++      file.puts HTTPLite::JSON.stringify(ability_list)
++    end
+   end
+ 
+   def self.load_updated_spritesheets
