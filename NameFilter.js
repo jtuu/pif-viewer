@@ -120,6 +120,7 @@ export const NameFilter = {
                             if (opt.selected) {
                                 filter_state.name_blacklist.delete(opt.value);
                                 filter_state.name_whitelist.delete(opt.value);
+                                filter_state.highlighted_names.delete(opt.value);
                                 any_selected = true;
                             }
                         }
@@ -135,6 +136,7 @@ export const NameFilter = {
                     onclick: e => {
                         filter_state.name_blacklist.clear();
                         filter_state.name_whitelist.clear();
+                        filter_state.highlighted_names.clear();
                     }
                 }, "Clear")),
             m("datalist", { id: "poke-names" }, Array.from(unfused_names).map(name => m("option", { key: name, value: name }))),
