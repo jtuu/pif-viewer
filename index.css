@@ -259,3 +259,13 @@ body {
 .empty-option {
     color: gray;
 }
+
+.stat-sort-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.stat-sort-checkboxes > label {
+    width: 30%;
+    white-space: nowrap;
+}
