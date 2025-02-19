@@ -29,6 +29,7 @@ body {
     padding: 10px;
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
 .controls > * {
@@ -36,9 +37,10 @@ body {
     border-radius: 5px;
     padding: 10px;
     margin: 10px;
-    flex: 1 1 0px;
+    flex: 0 0 0px;
     display: flex;
     flex-direction: column;
+    min-width: 25em;
 }
 
 .stat-sum-sort label {
