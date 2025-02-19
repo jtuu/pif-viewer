@@ -30,7 +30,10 @@ export const PokeCard = {
         const poke = vnode.attrs.poke;
 
         const selected_alt = Object.hasOwn(poke, "selected_alt") ? poke.selected_alt : 0;
-        const alt_count = poke.alt_count;
+        let alt_count = poke.alt_count || 0;
+        if (!poke.has_default) {
+            alt_count += 1;
+        }
         const alt_sprite_names = new Array(alt_count);
         alt_sprite_names[0] = "default";
         for (let i = 0; i < alt_count - 1; i++) {
@@ -73,7 +76,9 @@ export const PokeCard = {
                     target: "_blank",
                     href: details_url(poke)
                 }, m("img.poke-img", {
-                    src: sprite_url(poke, alt_sprite_names[selected_alt]),
+                    src: selected_alt === 0 && !poke.has_default
+                        ? "autogen_placeholder.png"
+                        : sprite_url(poke, alt_sprite_names[selected_alt]),
                     loading: "lazy"
                 }))),
             m("div.poke-stats", [

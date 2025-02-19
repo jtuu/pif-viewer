@@ -170,6 +170,13 @@ function sort_and_filter(all_pokemon, filter_state) {
             return false;
         }
 
+        const customless_filter_passed = filter_state.only_show_customless
+            ? !poke.alt_count
+            : filter_state.show_customless || poke.alt_count > 0;
+        if (!customless_filter_passed) {
+            return false;
+        }
+
         if (poke.is_fused) {
             return !(filter_state.name_blacklist.has(poke.head_name) || filter_state.name_blacklist.has(poke.body_name));
         } else {
@@ -269,6 +276,8 @@ async function main() {
         highlighted_names: new Set(),
         exclusive_name_whitelist: false,
         self_fusion_filter: true,
+        show_customless: false,
+        only_show_customless: false,
         stat_sorting_options: {
             "HP": false,
             "ATK": false,
@@ -342,6 +351,8 @@ async function main() {
         filter_state.highlighted_names = Object.hasOwn(new_state, "highlighted_names")
             ? new Set(new_state.highlighted_names)
             : filter_state.highlighted_names;
+        filter_state.show_customless = Boolean(new_state.show_customless);
+        filter_state.only_show_customless = Boolean(new_state.only_show_customless);
         apply_sorting_and_filtering();
     };
     const load_state_from_local_storage = () => {

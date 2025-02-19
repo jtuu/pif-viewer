@@ -61,6 +61,7 @@ if __name__ == "__main__":
             if total_done % (len(spritesheets) // 10) == 0:
                 print("{}/{}".format(total_done, len(spritesheets)))
     print("{}/{}".format(total_done, len(spritesheets)))
+    has_default = set()
     exist_map = {}
     for i in range(len(spritesheets)):
         (_, head_id, alt_id) = spritesheets[i]
@@ -71,13 +72,18 @@ if __name__ == "__main__":
                 key = "{}.{}".format(head_id, j)
                 count = exist_map.get(key, 0)
                 exist_map[key] = count + 1
+                if alt_id == "":
+                    has_default.add(key)
     with open("pokemon.json", "r") as f:
         pokemon = json.load(f)
     for poke in pokemon:
+        if not poke["is_fused"]:
+            continue
         key = "{}.{}".format(poke["head_id"], poke["body_id"])
         if key in exist_map:
             poke["alt_count"] = exist_map[key]
         else:
-            poke["alt_count"] = 1
+            poke["alt_count"] = 0
+        poke["has_default"] = key in has_default
     with open("pokemon.json", "w") as f:
-        json.dump(pokemon, f, indent=4)
+        json.dump(pokemon, f)
