@@ -171,8 +171,8 @@ function sort_and_filter(all_pokemon, filter_state) {
         }
 
         const customless_filter_passed = filter_state.only_show_customless
-            ? !poke.alt_count
-            : filter_state.show_customless || poke.alt_count > 0;
+            ? (!poke.alt_count || !poke.has_default)
+            : (filter_state.show_customless || poke.alt_count > 0);
         if (!customless_filter_passed) {
             return false;
         }
