@@ -1,13 +1,14 @@
 import { InputWidget } from "./InputWidget.js"
+import { standard_types } from "./TypeFilter.js";
 
 const conditions = ["=", "!=", "<", ">", "<=", ">="];
 
 export const ResistanceFilter = {
     view(vnode) {
-        const { filter_state, types } = vnode.attrs;
+        const { filter_state } = vnode.attrs;
         return m("div.resistance-filter", m("strong", "Filter by resistance"),
             m("div.type-label-list",
-                types.map(type =>
+                standard_types.map(type =>
                     m("span", { key: type, className: "typelabel type-" + type.toLowerCase() }, type,
                         m("span",
                             m("select", {

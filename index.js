@@ -1,35 +1,9 @@
 import { PokeCard, poke_key } from "./PokeCard.js";
 import { StatFilter } from "./StatFilter.js";
 import { NameFilter } from "./NameFilter.js";
-import { TypeFilter } from "./TypeFilter.js";
+import { TypeFilter, standard_types } from "./TypeFilter.js";
 import { AbilityFilter } from "./AbilityFilter.js";
 import { ResistanceFilter } from "./ResistanceFilter.js";
-
-const SPRITESHEET_WIDTH = 1920;
-const SPRITESHEET_HEIGHT = 2496;
-const SPRITESHEET_COLUMNS = 20;
-const SPRITE_SIZE = 96;
-
-const types = [
-    "NORMAL",
-    "FIRE",
-    "WATER",
-    "ELECTRIC",
-    "GRASS",
-    "ICE",
-    "FIGHTING",
-    "POISON",
-    "GROUND",
-    "FLYING",
-    "PSYCHIC",
-    "BUG",
-    "ROCK",
-    "GHOST",
-    "DRAGON",
-    "DARK",
-    "STEEL",
-    "FAIRY",
-];
 
 function condition(a, b, cond) {
     switch (cond) {
@@ -49,45 +23,40 @@ function condition(a, b, cond) {
     return false;
 }
 
-const type_chart = [
-    [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.0, 1.0, 1.0, 0.5, 1.0],
-    [1.0, 0.5, 0.5, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 0.5, 1.0, 0.5, 1.0, 2.0, 1.0],
-    [1.0, 2.0, 0.5, 1.0, 0.5, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.5, 1.0, 1.0, 1.0],
-    [1.0, 1.0, 2.0, 0.5, 0.5, 1.0, 1.0, 1.0, 0.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0],
-    [1.0, 0.5, 2.0, 1.0, 0.5, 1.0, 1.0, 0.5, 2.0, 0.5, 1.0, 0.5, 2.0, 1.0, 0.5, 1.0, 0.5, 1.0],
-    [1.0, 0.5, 0.5, 1.0, 2.0, 0.5, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.5, 1.0],
-    [2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.5, 1.0, 0.5, 0.5, 0.5, 2.0, 0.0, 1.0, 2.0, 2.0, 0.5],
-    [1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.5, 0.5, 1.0, 1.0, 1.0, 0.5, 0.5, 1.0, 1.0, 0.0, 2.0],
-    [1.0, 2.0, 1.0, 2.0, 0.5, 1.0, 1.0, 2.0, 1.0, 0.0, 1.0, 0.5, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0],
-    [1.0, 1.0, 1.0, 0.5, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 0.5, 1.0, 1.0, 1.0, 0.5, 1.0],
-    [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 0.0, 0.5, 1.0],
-    [1.0, 0.5, 1.0, 1.0, 2.0, 1.0, 0.5, 0.5, 1.0, 0.5, 2.0, 1.0, 1.0, 0.5, 1.0, 2.0, 0.5, 0.5],
-    [1.0, 2.0, 1.0, 1.0, 1.0, 2.0, 0.5, 1.0, 0.5, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0],
-    [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 0.5, 1.0, 1.0],
-    [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.5, 0.0],
-    [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 0.5, 1.0, 0.5],
-    [1.0, 0.5, 0.5, 0.5, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 0.5, 2.0],
-    [1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 2.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 0.5, 1.0]];
-
-function get_resistance_value(poke, attacker_type) {
-    const attack_resists = type_chart[types.indexOf(attacker_type)];
-    let resist = attack_resists[types.indexOf(poke.type1)];
-    if (poke.type2 !== poke.type1) {
-        resist *= attack_resists[types.indexOf(poke.type2)];
+function get_resistance_value(types, poke, attacker_type_name) {
+    const attacker_type = Object.values(types).find(tp => tp.name.toLowerCase() === attacker_type_name.toLowerCase()).id;
+    let effectiveness = 1;
+    const type1 = types[poke.type1];
+    if (type1.weaknesses.includes(attacker_type)) {
+        effectiveness *= 2;
+    } else if (type1.resistances.includes(attacker_type)) {
+        effectiveness *= 0.5;
+    } else if (type1.immunities.includes(attacker_type)) {
+        effectiveness *= 0;
     }
-    return resist;
+    if (effectiveness > 0 && poke.type1 !== poke.type2) {
+        const type2 = types[poke.type2];
+        if (type2.weaknesses.includes(attacker_type)) {
+            effectiveness *= 2;
+        } else if (type2.resistances.includes(attacker_type)) {
+            effectiveness *= 0.5;
+        } else if (type2.immunities.includes(attacker_type)) {
+            effectiveness *= 0;
+        }
+    }
+    return effectiveness;
 }
 
-function sort_and_filter(all_pokemon, filter_state) {
+function sort_and_filter(game_data, sprites_metadata, filter_state) {
     // Filter by name and type
     const type_filter_array = Array.from(filter_state.type_filter);
     const min_stat_keys = Object.keys(filter_state.stat_minimum_filter);
 
-    const filtered_pokemon = all_pokemon.filter(poke => {
+    const filtered_pokemon = game_data.pokemon.filter(poke => {
         const resistance_filter_passed = Object.keys(filter_state.resistance_filter).every(tp => {
             const filter = filter_state.resistance_filter[tp];
             if (filter.value !== null) {
-                const resist = get_resistance_value(poke, tp);
+                const resist = get_resistance_value(game_data.types, poke, tp);
                 return condition(resist, filter.value, filter.condition);
             }
             return true;
@@ -106,8 +75,8 @@ function sort_and_filter(all_pokemon, filter_state) {
                     "2": 0,
                     "4": 0
                 };
-                for (const type of types) {
-                    const resist = get_resistance_value(poke, type);
+                for (const type of standard_types) {
+                    const resist = get_resistance_value(game_data.types, poke, type);
                     resistance_counts[resist] += 1;
                 }
                 poke.resistance_counts = resistance_counts;
@@ -116,12 +85,12 @@ function sort_and_filter(all_pokemon, filter_state) {
                 return false;
             } else if (filter_state.resistance_count_filter.Resistances !== null && filter_state.resistance_count_filter.Resistances > poke.resistance_counts["0.5"] + poke.resistance_counts["0.25"] * 2 + poke.resistance_counts["0"] * 3) {
                 return false;
-            } else if (filter_state.resistance_count_filter.Immunities !== null && filter_state.resistance_count_filter.Weaknesses > poke.resistance_counts["0"]) {
+            } else if (filter_state.resistance_count_filter.Immunities !== null && filter_state.resistance_count_filter.Immunities > poke.resistance_counts["0"]) {
                 return false;
             }
         }
 
-        const self_fusion_filter_passed = !filter_state.self_fusion_filter || poke.head_name !== poke.body_name;
+        const self_fusion_filter_passed = !filter_state.self_fusion_filter || poke.head_id !== poke.body_id;
         if (!self_fusion_filter_passed) {
             return false;
         }
@@ -133,19 +102,19 @@ function sort_and_filter(all_pokemon, filter_state) {
         }
 
         const exclusive_name_whitelist_filter_passed = (!filter_state.exclusive_name_whitelist || filter_state.name_whitelist.size === 0) ||
-            (filter_state.name_whitelist.has(poke.head_name) && filter_state.name_whitelist.has(poke.body_name));
+            (filter_state.name_whitelist.has(poke.head_id) && filter_state.name_whitelist.has(poke.body_id));
         if (!exclusive_name_whitelist_filter_passed) {
             return false;
         }
 
         const name_whitelist_filter_passed = (filter_state.exclusive_name_whitelist || filter_state.name_whitelist.size === 0) ||
-            (filter_state.name_whitelist.has(poke.head_name) || filter_state.name_whitelist.has(poke.body_name));
+            (filter_state.name_whitelist.has(poke.head_id) || filter_state.name_whitelist.has(poke.body_id));
         if (!name_whitelist_filter_passed) {
             return false;
         }
 
         const highlighted_names_filter_passed = filter_state.highlighted_names.size === 0 ||
-            filter_state.highlighted_names.has(poke.head_name) || filter_state.highlighted_names.has(poke.body_name);
+            filter_state.highlighted_names.has(poke.head_id) || filter_state.highlighted_names.has(poke.body_id);
         if (!highlighted_names_filter_passed) {
             return false;
         }
@@ -160,27 +129,33 @@ function sort_and_filter(all_pokemon, filter_state) {
             return false;
         }
 
-        const type_filter_every_passed = !filter_state.type_filter_condition || type_filter_array.every(tp => poke.type1 === tp || poke.type2 === tp);
+        const type1_name = game_data.types[poke.type1].name.toUpperCase();
+        const type2_name = game_data.types[poke.type2].name.toUpperCase();
+
+        const type_filter_every_passed = !filter_state.type_filter_condition || type_filter_array.every(tp => type1_name === tp || type2_name === tp);
         if (!type_filter_every_passed) {
             return false;
         }
 
-        const type_filter_some_passed = filter_state.type_filter_condition || (filter_state.type_filter.has(poke.type1) || filter_state.type_filter.has(poke.type2));
+        const type_filter_some_passed = filter_state.type_filter_condition || (filter_state.type_filter.has(type1_name) || filter_state.type_filter.has(type2_name));
         if (!type_filter_some_passed) {
             return false;
         }
 
+        const sprite_key = poke_key(poke);
+        const sprites_info = sprites_metadata.sprites[sprite_key];
+
         const customless_filter_passed = filter_state.only_show_customless
-            ? (!poke.alt_count || !poke.has_default)
-            : (filter_state.show_customless || poke.alt_count > 0);
+            ? !sprites_info || !sprites_info.has_main
+            : (filter_state.show_customless || (sprites_info && (sprites_info.has_main || sprites_info.alt_count > 0)));
         if (!customless_filter_passed) {
             return false;
         }
 
         if (poke.is_fused) {
-            return !(filter_state.name_blacklist.has(poke.head_name) || filter_state.name_blacklist.has(poke.body_name));
+            return !(filter_state.name_blacklist.has(poke.head_id) || filter_state.name_blacklist.has(poke.body_id));
         } else {
-            return !filter_state.name_blacklist.has(poke.name);
+            return !filter_state.name_blacklist.has(poke.head_id);
         }
     });
 
@@ -214,23 +189,127 @@ function sort_and_filter(all_pokemon, filter_state) {
     return filtered_pokemon;
 }
 
+function is_triple_fusion(poke) {
+    return poke.head_id >= 999999;
+}
+
+function calculate_fused_stat(dom, sub) {
+    return Math.floor(((2 * dom) / 3) + (sub / 3));
+}
+
+function fuse_pokemon(
+    type_map,
+    head,
+    body
+) {
+    // Fusions can't be fused again
+    if (is_triple_fusion(head) || is_triple_fusion(body) || head.is_fused || body.is_fused) {
+        return null;
+    }
+
+    const hp = calculate_fused_stat(head.hp, body.hp);
+    const spa = calculate_fused_stat(head.spa, body.spa);
+    const spd = calculate_fused_stat(head.spd, body.spd);
+
+    const atk = calculate_fused_stat(body.atk, head.atk);
+    const def = calculate_fused_stat(body.def, head.def);
+    const spe = calculate_fused_stat(body.spe, head.spe);
+
+    const bst = hp + spa + spd + atk + def + spe;
+
+    // Normal/Flying types are special
+    const normal_type_id = Object.values(type_map).find(tp => tp.name.toLowerCase() === "normal").id;
+    const flying_type_id = Object.values(type_map).find(tp => tp.name.toLowerCase() === "normal").id;
+    const type1 = head.type1 == normal_type_id && head.type2 == flying_type_id
+        ? head.type2
+        : head.type1;
+
+    // Use other if same as head
+    const type2 = body.type2 == type1
+        ? body.type1
+        : body.type2;
+
+    const abilities = head.abilities.slice();
+    for (const ab of body.abilities) {
+        if (!abilities.includes(ab)) {
+            abilities.push(ab);
+        }
+    }
+
+    const hidden_abilities = head.hidden_abilities.slice();
+    for (const ab of body.hidden_abilities) {
+        if (!hidden_abilities.includes(ab)) {
+            hidden_abilities.push(ab);
+        }
+    }
+
+    return {
+        head_id: head.head_id,
+        body_id: body.body_id,
+        is_fused: true,
+        hp,
+        atk,
+        def,
+        spa,
+        spd,
+        spe,
+        bst,
+        type1,
+        type2,
+        abilities,
+        hidden_abilities,
+    };
+}
+
+function generate_fusions(game_data) {
+    const unfused_pokemon = game_data.pokemon.slice();
+
+    // Add self-fusions
+    for (let i = 0; i < unfused_pokemon.length; i++) {
+        const copy = Object.assign({}, unfused_pokemon[i]);
+        copy.is_fused = true;
+        game_data.pokemon.push(copy);
+    }
+
+    // Add fused pokemon
+    // Iterate through every pair of indices
+    for (let i = 0; i < unfused_pokemon.length - 1; i++) {
+        for (let j = i; j < unfused_pokemon.length - 1; j++) {
+            const poke1 = unfused_pokemon[i];
+            const poke2 = unfused_pokemon[j + 1];
+            const fusion1 = fuse_pokemon(game_data.types, poke1, poke2);
+            if (fusion1) {
+                game_data.pokemon.push(fusion1);
+            }
+
+            const fusion2 = fuse_pokemon(game_data.types, poke2, poke1);
+            if (fusion2) {
+                game_data.pokemon.push(fusion2);
+            }
+        }
+    }
+}
+
 async function download_files() {
     const files = await Promise.all([
-        fetch("pokemon.json").then(res => res.json()),
-        fetch("unfused_names.json").then(res => res.json()),
-        fetch("abilities.json").then(res => res.json())
+        fetch("sprites_metadata.json").then(res => res.json()),
+        fetch("game_data.json").then(res => res.json())
     ]);
 
-    const all_pokemon = files[0];
-    const unfused_names = files[1];
-    const all_abilities = files[2];
+    const sprites_metadata = files[0];
+    const game_data = files[1];
 
-    for (const poke of all_pokemon) {
+    if (!game_data.contains_fusions) {
+        generate_fusions(game_data);
+        game_data.contains_fusions = true;
+    }
+
+    for (const poke of game_data.pokemon) {
         poke.abilities = new Set(poke.abilities);
         poke.hidden_abilities = new Set(poke.hidden_abilities);
     }
 
-    return { all_pokemon, unfused_names, all_abilities };
+    return { game_data, sprites_metadata };
 }
 
 async function main() {
@@ -247,22 +326,16 @@ async function main() {
     window.onresize = on_window_resize;
 
     let is_loading = true;
-    const all_pokemon = [];
-    const unfused_names = new Set();
-    const all_abilities = new Set();
+    const game_data = {
+        abilities: {},
+        pokemon_names: {},
+        types: {},
+        pokemon: []
+    };
+    const sprites_metadata = {};
     download_files().then(files => {
-        all_pokemon.length = files.all_pokemon.length;
-        for (let i = 0; i < files.all_pokemon.length; i++) {
-            all_pokemon[i] = files.all_pokemon[i];
-        }
-
-        for (const name of files.unfused_names) {
-            unfused_names.add(name);
-        }
-
-        for (const ability of files.all_abilities) {
-            all_abilities.add(ability);
-        }
+        Object.assign(game_data, files.game_data);
+        Object.assign(sprites_metadata, files.sprites_metadata);
 
         is_loading = false;
 
@@ -300,9 +373,9 @@ async function main() {
             "max(ATK, SPA)": 0
         },
         type_filter_condition: false,
-        type_filter: new Set(types),
+        type_filter: new Set(standard_types),
         ability_filter: new Set(),
-        resistance_filter: types.reduce((acc, cur) => { acc[cur] = { value: null, condition: "=" }; return acc; }, {}),
+        resistance_filter: standard_types.reduce((acc, cur) => { acc[cur] = { value: null, condition: "=" }; return acc; }, {}),
         resistance_count_filter: {
             Weaknesses: null,
             Resistances: null,
@@ -311,7 +384,7 @@ async function main() {
     };
 
     const apply_sorting_and_filtering = () => {
-        const result = sort_and_filter(all_pokemon, filter_state);
+        const result = sort_and_filter(game_data, sprites_metadata, filter_state);
         // Replace all array elements with new result
         sorted_pokemon.length = result.length;
         for (let i = 0; i < result.length; i++) {
@@ -376,10 +449,10 @@ async function main() {
                 // Controls
                 m("div.controls",
                     m(StatFilter, { filter_state }),
-                    m(NameFilter, { filter_state, unfused_names }),
-                    m(TypeFilter, { filter_state, types }),
-                    m(AbilityFilter, { filter_state, all_abilities, sorted_pokemon }),
-                    m(ResistanceFilter, { filter_state, types })),
+                    m(NameFilter, { filter_state, unfused_names: game_data.pokemon_names }),
+                    m(TypeFilter, { filter_state }),
+                    m(AbilityFilter, { filter_state, all_abilities: game_data.abilities, sorted_pokemon }),
+                    m(ResistanceFilter, { filter_state })),
                 // Gallery
                 m("div.poke-gallery",
                     m(InfinityScroll, {
@@ -397,7 +470,9 @@ async function main() {
                         processPageData: data => {
                             return data.map(poke => m(PokeCard, {
                                 key: poke_key(poke),
-                                poke
+                                poke,
+                                game_data,
+                                sprites_metadata
                             }));
                         }
                     }))

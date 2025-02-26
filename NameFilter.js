@@ -39,15 +39,15 @@ const other_strong = [
     "Blissey"
 ];
 
-function add_name_filter(unfused_names, name_, add_list, remove_list) {
-    const names = Array.isArray(name_) ? name_ : [name_];
+function add_name_filter(unfused_names, id_, add_list, remove_list) {
+    const ids = Array.isArray(id_) ? id_ : [id_];
     let ok = false;
-    for (const name of names) {
-        if (name && !add_list.has(name) && unfused_names.has(name)) {
-            if (remove_list.has(name)) {
-                remove_list.delete(name);
+    for (const id of ids) {
+        if (id && !add_list.has(id) && id in unfused_names) {
+            if (remove_list.has(id)) {
+                remove_list.delete(id);
             }
-            add_list.add(name);
+            add_list.add(id);
             ok = true;
         }
     }
@@ -61,10 +61,11 @@ export const NameFilter = {
         const add_to_whitelist = names => add_name_filter(unfused_names, names, filter_state.name_whitelist, filter_state.name_blacklist);
         const make_optgroup = set => {
             if (set.size === 0) {
-                return m("option.empty-option", { disabled: true }, "(Empty)");
+                return m("option.empty-option", { label: "(Empty)", disabled: true });
             }
-            return Array.from(set).map(name => m("option", { key: name, value: name, selected: filter_state.highlighted_names.has(name) }, name));
+            return Array.from(set).map(id => m("option", { key: id, label: unfused_names[id], value: id, selected: filter_state.highlighted_names.has(id) }));
         };
+        const names_to_ids = names => parseInt(names.map(name => Object.entries(unfused_names).find(([k, v]) => v === name)[0]));
         return m("div.name-filter",
             m("div", m("label", { for: "name-filter-selection" }, m("strong", "Filter by name"))),
             m("div", m(InputWidget, {
@@ -78,7 +79,7 @@ export const NameFilter = {
                     onclick: e => {
                         const input_el = document.querySelector("#name-filter-selection");
                         if (input_el.value) {
-                            if (add_to_blacklist(input_el.value)) {
+                            if (add_to_blacklist(parseInt(input_el.value))) {
                                 input_el.value = "";
                             }
                         } else {
@@ -86,7 +87,7 @@ export const NameFilter = {
                             const selected = [];
                             for (const opt of list_el.options) {
                                 if (opt.selected) {
-                                    selected.push(opt.value);
+                                    selected.push(parseInt(opt.value));
                                 }
                             }
                             add_to_blacklist(selected);
@@ -97,7 +98,7 @@ export const NameFilter = {
                     onclick: e => {
                         const input_el = document.querySelector("#name-filter-selection");
                         if (input_el.value) {
-                            if (add_to_whitelist(input_el.value)) {
+                            if (add_to_whitelist(parseInt(input_el.value))) {
                                 input_el.value = "";
                             }
                         } else {
@@ -105,7 +106,7 @@ export const NameFilter = {
                             const selected = [];
                             for (const opt of list_el.options) {
                                 if (opt.selected) {
-                                    selected.push(opt.value);
+                                    selected.push(parseInt(opt.value));
                                 }
                             }
                             add_to_whitelist(selected);
@@ -118,16 +119,18 @@ export const NameFilter = {
                         let any_selected = false;
                         for (const opt of list_el.options) {
                             if (opt.selected) {
-                                filter_state.name_blacklist.delete(opt.value);
-                                filter_state.name_whitelist.delete(opt.value);
-                                filter_state.highlighted_names.delete(opt.value);
+                                const v = parseInt(opt.value);
+                                filter_state.name_blacklist.delete(v);
+                                filter_state.name_whitelist.delete(v);
+                                filter_state.highlighted_names.delete(v);
                                 any_selected = true;
                             }
                         }
                         if (!any_selected) {
                             const input_el = document.querySelector("#name-filter-selection");
-                            filter_state.name_blacklist.delete(input_el.value);
-                            filter_state.name_whitelist.delete(input_el.value);
+                            const v = parseInt(input_el.value);
+                            filter_state.name_blacklist.delete(v);
+                            filter_state.name_whitelist.delete(v);
                             input_el.value = "";
                         }
                     }
@@ -139,7 +142,7 @@ export const NameFilter = {
                         filter_state.highlighted_names.clear();
                     }
                 }, "Clear")),
-            m("datalist", { id: "poke-names" }, Array.from(unfused_names).map(name => m("option", { key: name, value: name }))),
+            m("datalist", { id: "poke-names" }, Object.entries(unfused_names).map(([id, name]) => m("option", { key: name, value: id, label: name }))),
             m("select", {
                 id: "name-filter-list",
                 name: "name-filter-list",
@@ -147,7 +150,7 @@ export const NameFilter = {
                 onchange: e => {
                     filter_state.highlighted_names.clear();
                     for (const opt of e.target.selectedOptions) {
-                        filter_state.highlighted_names.add(opt.value);
+                        filter_state.highlighted_names.add(parseInt(opt.value));
                     }
                 }
             },
@@ -155,13 +158,13 @@ export const NameFilter = {
                 m("optgroup", { label: "Whitelist" }, make_optgroup(filter_state.name_whitelist))),
             m("div",
                 m("button", {
-                    onclick: e => add_to_blacklist(legendaries)
+                    onclick: e => add_to_blacklist(names_to_ids(legendaries))
                 }, "Legendaries"),
                 m("button", {
-                    onclick: e => add_to_blacklist(other_ubers)
+                    onclick: e => add_to_blacklist(names_to_ids(other_ubers))
                 }, "Ubers"),
                 m("button", {
-                    onclick: e => add_to_blacklist(other_strong)
+                    onclick: e => add_to_blacklist(names_to_ids(other_strong))
                 }, "Strong")),
             m("div", m("label", m("input", {
                 type: "checkbox",

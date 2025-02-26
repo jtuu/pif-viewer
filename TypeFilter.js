@@ -1,6 +1,27 @@
+export const standard_types = [
+    "NORMAL",
+    "FIRE",
+    "WATER",
+    "ELECTRIC",
+    "GRASS",
+    "ICE",
+    "FIGHTING",
+    "POISON",
+    "GROUND",
+    "FLYING",
+    "PSYCHIC",
+    "BUG",
+    "ROCK",
+    "GHOST",
+    "DRAGON",
+    "DARK",
+    "STEEL",
+    "FAIRY",
+];
+
 export const TypeFilter = {
     view(vnode) {
-        const { filter_state, types } = vnode.attrs;
+        const { filter_state } = vnode.attrs;
         return m("div.type-filter", m("strong", "Filter by type"),
             m("div",
                 m("label", "Match some",
@@ -26,7 +47,7 @@ export const TypeFilter = {
                             }
                         }, "Every"))),
             m("div.type-filter-list.type-label-list",
-                types.map(type =>
+                standard_types.map(type =>
                     m("label", { key: type, className: "typelabel type-" + type.toLowerCase() },
                         type, m("input", {
                             type: "checkbox", checked: filter_state.type_filter.has(type),
@@ -41,7 +62,7 @@ export const TypeFilter = {
             m("div",
                 m("button", {
                     onclick: () => {
-                        types.forEach(tp => filter_state.type_filter.add(tp));
+                        standard_types.forEach(tp => filter_state.type_filter.add(tp));
                     }
                 }, "Enable all"),
                 m("button", {
