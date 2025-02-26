@@ -1,1 +1,5 @@
 spritesheets_custom
+game-data-export/target
+game-data-export/input
+game-data-export/output
+.vscode
