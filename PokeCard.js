@@ -71,32 +71,43 @@ export const PokeCard = {
             ? head_name + "/" + body_name
             : head_name;
 
+        const artist_ids = selected_sprite_idx === 0
+            ? sprites_info.main_artists
+            : sprites_info.alt_artists[all_alt_names[selected_sprite_idx - 1]];
+        let artist_names = m("span.unknown-artist", "Unknown artist");
+        if (artist_ids.length > 0) {
+            const names = artist_ids.map(id => sprites_metadata.artists[id]).join(" & ");
+            artist_names = m("span", { title: names }, artist_ids.length > 1 ? "Artists: " : "Artist: ", names);
+        }
+
         return m("div.poke-card",
             m("div.poke-name", poke_name),
             m("div.poke-type", poke_type_names.map(type => m("span", { className: "typelabel type-" + type.toLowerCase() }, type))),
             m("div.alt-sprite-select",
-                "Sprite: ",
-                sprite_count > 1
-                    ? [m("button", {
-                        onclick: e => {
-                            if (selected_sprite_idx > 0) {
-                                poke.selected_sprite_idx = selected_sprite_idx - 1;
-                            } else {
-                                poke.selected_sprite_idx = sprite_names.length - 1;
+                m("div", "Sprite: ",
+                    // Only show sprite switching controls if there's more than one sprite
+                    sprite_count > 1
+                        ? [m("button", {
+                            onclick: e => {
+                                if (selected_sprite_idx > 0) {
+                                    poke.selected_sprite_idx = selected_sprite_idx - 1;
+                                } else {
+                                    poke.selected_sprite_idx = sprite_names.length - 1;
+                                }
                             }
-                        }
-                    }, "←"),
-                    m("button", {
-                        onclick: e => {
-                            if (selected_sprite_idx < sprite_names.length - 1) {
-                                poke.selected_sprite_idx = selected_sprite_idx + 1;
-                            } else {
-                                poke.selected_sprite_idx = 0;
+                        }, "←"),
+                        m("button", {
+                            onclick: e => {
+                                if (selected_sprite_idx < sprite_names.length - 1) {
+                                    poke.selected_sprite_idx = selected_sprite_idx + 1;
+                                } else {
+                                    poke.selected_sprite_idx = 0;
+                                }
                             }
-                        }
-                    }, "→")]
-                    : null,
-                m("span", sprite_names[selected_sprite_idx])),
+                        }, "→")]
+                        : null,
+                    m("span", sprite_names[selected_sprite_idx])),
+                m("div.artist-names", artist_names)),
             m("div.poke-img",
                 m("a.details-link", {
                     target: "_blank",

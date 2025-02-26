@@ -105,10 +105,22 @@ body {
 .poke-card {
     margin: 10px;
     padding: 10px;
+    width: 192px;
     background: rgb(92, 192, 117);
     color: #0b0b0b;
     border-radius: 1em;
     text-align: center;
+}
+
+.poke-card .artist-names {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.poke-card .unknown-artist {
+    color: #575757;
+    font-style: italic;
 }
 
 .poke-img {
