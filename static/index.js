@@ -426,6 +426,20 @@ async function main() {
             : filter_state.highlighted_names;
         filter_state.show_customless = Boolean(new_state.show_customless);
         filter_state.only_show_customless = Boolean(new_state.only_show_customless);
+
+        // Try to detect legacy format
+        const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);
+        // These sets used to contain strings, now they contain numbers
+        if (contains_nan_item(Array.from(filter_state.name_blacklist))) {
+            filter_state.name_blacklist.clear();
+        }
+        if (contains_nan_item(Array.from(filter_state.name_whitelist))) {
+            filter_state.name_whitelist.clear();
+        }
+        if (contains_nan_item(Array.from(filter_state.ability_filter))) {
+            filter_state.ability_filter.clear();
+        }
+
         apply_sorting_and_filtering();
     };
     const load_state_from_local_storage = () => {
