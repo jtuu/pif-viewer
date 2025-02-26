@@ -159,19 +159,14 @@ body {
 }
 
 .poke-stats {
-    width: 192px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    padding-left: 12.5%;
 }
 
 .poke-stat {
-    flex: 1 1 0px;
+    width: 50%;
+    display: inline-block;
     white-space: nowrap;
-}
-
-.poke-stats span {
-    padding-right: 5px;
+    text-align: left;
 }
 
 .poke-type {
