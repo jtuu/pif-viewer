@@ -65,7 +65,7 @@ export const NameFilter = {
             }
             return Array.from(set).map(id => m("option", { key: id, label: unfused_names[id], value: id, selected: filter_state.highlighted_names.has(id) }));
         };
-        const names_to_ids = names => parseInt(names.map(name => Object.entries(unfused_names).find(([k, v]) => v === name)[0]));
+        const names_to_ids = names => names.map(name => parseInt(Object.entries(unfused_names).find(([k, v]) => v === name)[0]));
         return m("div.name-filter",
             m("div", m("label", { for: "name-filter-selection" }, m("strong", "Filter by name"))),
             m("div", m(InputWidget, {
