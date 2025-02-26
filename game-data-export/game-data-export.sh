@@ -19,6 +19,7 @@ output_format="json"
 pif_repo_name="infinitefusion-e18"
 version_file="$output_dir/data_version.txt"
 sprites_dir="$output_dir/split_sprites"
+result_dir="../static"
 
 if [ "$output_format" = "json" ]; then
     output_file="$output_dir/game_data.json"
@@ -64,9 +65,9 @@ if [ -f "$output_file" ] && [ -f "$sprites_file" ] && [ "$data_version" = "$save
 else
     # Run export
     cargo run --release -- -i "$input_dir/$pif_repo_name" -o "$output_dir" -f "$output_format" --data-export --sprites-export
-    cp "$output_file" ..
-    cp "$sprites_file" ..
-    cp -r "$sprites_dir" ..
+    cp "$output_file" "$result_dir"
+    cp "$sprites_file" "$result_dir"
+    cp -r "$sprites_dir" "$result_dir"
     # Save version identifier
     echo "$data_version" > "$version_file"
 fi
