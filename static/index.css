@@ -278,3 +278,14 @@ body {
     width: 30%;
     white-space: nowrap;
 }
+
+.evolution-level-range-labels {
+    display: flex;
+    justify-content: space-between;
+}
+
+.evolution-level-range-input {
+    width: 50%;
+    padding: 0;
+    margin: 0;
+}

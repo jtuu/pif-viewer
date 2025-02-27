@@ -8,6 +8,64 @@ use thurgood::{rc::RbAny, rc::RbSymbol};
 use crate::util::*;
 
 #[derive(Serialize, Clone)]
+enum EvolutionKind {
+    Level(u8),
+    LevelDay(u8),
+    LevelNight(u8),
+    Item(String),
+    HasMove(String),
+    AttackGreater(u8),
+    DefenseGreater(u8),
+    AtkDefEqual(u8),
+    Shedinja(u8),
+    Ninjask(u8),
+    DayHoldItem(String),
+}
+
+#[derive(Serialize, Clone)]
+struct Evolution {
+    evo_id: u32,
+    is_preevo: bool,
+    kind: EvolutionKind,
+}
+
+impl Evolution {
+    fn from_rb(poke_sym_map: &HashMap<String, u32>, evo_any: &RbAny) -> Self {
+        // Why is this an array...
+        let evo_data = evo_any.as_array().unwrap();
+        let evo_name = evo_data[0].as_symbol().unwrap().as_str().unwrap();
+        let condition = evo_data[1].as_symbol().unwrap().as_str().unwrap();
+        let param = &evo_data[2];
+        let is_preevo = evo_data[3].as_bool().unwrap();
+
+        let evo_kind = match condition {
+            "Level" => EvolutionKind::Level(param.as_int().unwrap() as u8),
+            "LevelDay" => EvolutionKind::LevelDay(param.as_int().unwrap() as u8),
+            "LevelNight" => EvolutionKind::LevelNight(param.as_int().unwrap() as u8),
+            "Item" => EvolutionKind::Item(param.as_symbol().unwrap().as_str().unwrap().to_owned()),
+            "HasMove" => {
+                EvolutionKind::HasMove(param.as_symbol().unwrap().as_str().unwrap().to_owned())
+            }
+            "AttackGreater" => EvolutionKind::AttackGreater(param.as_int().unwrap() as u8),
+            "DefenseGreater" => EvolutionKind::DefenseGreater(param.as_int().unwrap() as u8),
+            "AtkDefEqual" => EvolutionKind::AtkDefEqual(param.as_int().unwrap() as u8),
+            "Shedinja" => EvolutionKind::Shedinja(param.as_int().unwrap() as u8),
+            "Ninjask" => EvolutionKind::Ninjask(param.as_int().unwrap() as u8),
+            "DayHoldItem" => {
+                EvolutionKind::DayHoldItem(param.as_symbol().unwrap().as_str().unwrap().to_owned())
+            }
+            _ => panic!("Unexpected evolution condition {}", condition),
+        };
+
+        return Self {
+            evo_id: *poke_sym_map.get(evo_name).unwrap(),
+            is_preevo,
+            kind: evo_kind,
+        };
+    }
+}
+
+#[derive(Serialize, Clone)]
 struct ParsedPokemon {
     head_id: u32,
     body_id: u32,
@@ -44,10 +102,15 @@ struct PokemonType {
 #[derive(Serialize)]
 struct ResultFile {
     contains_fusions: bool,
+    // Key is numeric id of ability as string
     abilities: HashMap<String, Ability>,
+    // Key is numeric id of pokemon as string
     pokemon_names: HashMap<String, String>,
+    // Key is numeric id of type as string
     types: HashMap<String, PokemonType>,
     pokemon: Vec<ParsedPokemon>,
+    // Key is numeric id of pokemon as string
+    evolutions: HashMap<String, Vec<Evolution>>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -150,7 +213,9 @@ pub fn export_data(
     let mut pokemon_names = HashMap::new();
     let mut types = HashMap::new();
     let mut unfused_pokemon = Vec::new();
+    // Result will be vec but use hashmap here to deduplicate
     let mut pokemon = HashMap::new();
+    let mut evolutions = HashMap::new();
 
     // Create name->id lookup table for abilities
     let mut ability_sym_map = HashMap::new();
@@ -162,13 +227,18 @@ pub fn export_data(
         .values()
         .for_each(|ability_any| {
             let ability_obj = ability_any.as_object().unwrap();
-            let sym: String = ability_obj.get_field("@id");
             let id: u32 = ability_obj.get_field("@id_number");
+            let key = id.to_string();
+            // Hash contains duplicates for some reason
+            if abilities.contains_key(&key) {
+                return;
+            }
+            let sym: String = ability_obj.get_field("@id");
             let name = ability_obj.get_field("@real_name");
             let description = ability_obj.get_field("@real_description");
             ability_sym_map.insert(sym, id);
             abilities.insert(
-                id.to_string(),
+                key,
                 Ability {
                     id,
                     name,
@@ -177,7 +247,7 @@ pub fn export_data(
             );
         });
 
-    // Create name->id lookup table for types
+    // Create symbol->id lookup table for types
     let mut type_sym_map = HashMap::new();
     type_data.as_hash().unwrap().values().for_each(|type_any| {
         let type_obj = type_any.as_object().unwrap();
@@ -227,6 +297,19 @@ pub fn export_data(
             pokemon_names.insert(id.to_string(), name);
         });
 
+    // Create symbol->id lookup table for pokemon
+    let mut poke_sym_map = HashMap::new();
+    species_data
+        .as_hash()
+        .unwrap()
+        .values()
+        .for_each(|poke_any| {
+            let poke_obj = poke_any.as_object().unwrap();
+            let id: u32 = poke_obj.get_field("@id_number");
+            let sym: String = poke_obj.get_field("@id");
+            poke_sym_map.insert(sym, id);
+        });
+
     // Add unfused pokemon
     species_data
         .as_hash()
@@ -234,7 +317,12 @@ pub fn export_data(
         .values()
         .for_each(|poke_any| {
             let poke_obj = poke_any.as_object().unwrap();
-            let id = poke_obj.get_field("@id_number");
+            let id: u32 = poke_obj.get_field("@id_number");
+            let key = id.to_string();
+            // Hash contains duplicates for some reason
+            if pokemon.contains_key(&key) {
+                return;
+            }
             let base_stats = poke_obj
                 .fields
                 .get(&RbSymbol::from_str("@base_stats"))
@@ -276,6 +364,19 @@ pub fn export_data(
             let type2: String = poke_obj.get_field("@type2");
             let abilities: Vec<String> = poke_obj.get_field("@abilities");
             let hidden_abilities: Vec<String> = poke_obj.get_field("@hidden_abilities");
+            // Parse this pokemon's past and future evolutions
+            evolutions.insert(
+                key.clone(),
+                poke_obj
+                    .fields
+                    .get(&RbSymbol::from_str("@evolutions"))
+                    .unwrap()
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|evo_any| Evolution::from_rb(&poke_sym_map, &evo_any))
+                    .collect(),
+            );
             let poke = ParsedPokemon {
                 head_id: id,
                 body_id: id,
@@ -299,7 +400,7 @@ pub fn export_data(
                     .collect(),
             };
             unfused_pokemon.push(poke.clone());
-            pokemon.insert(id.to_string(), poke);
+            pokemon.insert(key, poke);
         });
 
     // It's probably better to just generate the fusions in the client
@@ -335,12 +436,20 @@ pub fn export_data(
         }
     }
 
+    let mut sorted_pokemon = pokemon.into_values().collect::<Vec<ParsedPokemon>>();
+    sorted_pokemon.sort_by(|a, b| {
+        if a.head_id == b.head_id {
+            return a.body_id.cmp(&b.body_id);
+        }
+        return a.head_id.cmp(&b.body_id);
+    });
     let result_data = ResultFile {
         contains_fusions: export_fusions,
         abilities,
         pokemon_names,
         types,
-        pokemon: pokemon.into_values().collect(),
+        pokemon: sorted_pokemon,
+        evolutions,
     };
 
     return match output_format {

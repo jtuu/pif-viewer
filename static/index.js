@@ -4,6 +4,7 @@ import { NameFilter } from "./NameFilter.js";
 import { TypeFilter, standard_types } from "./TypeFilter.js";
 import { AbilityFilter } from "./AbilityFilter.js";
 import { ResistanceFilter } from "./ResistanceFilter.js";
+import { EvolutionFilter } from "./EvolutionFilter.js";
 
 function condition(a, b, cond) {
     switch (cond) {
@@ -150,6 +151,32 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
             : (filter_state.show_customless || (sprites_info && (sprites_info.has_main || sprites_info.alt_count > 0)));
         if (!customless_filter_passed) {
             return false;
+        }
+
+        if (filter_state.evolution_level_range_filter_enabled) {
+            const evo_level_range_checker = evo => {
+                const kind = evo.kind;
+                if ("Level" in kind) {
+                    return kind.Level >= filter_state.evolution_level_range_filter_min
+                        && kind.Level <= filter_state.evolution_level_range_filter_max;
+                }
+                return false;
+            };
+
+            const head_evolutions = game_data.evolutions[poke.head_id];
+            const body_evolutions = game_data.evolutions[poke.body_id];
+
+            const head_evo_level_range_filter_passed = head_evolutions.length === 0
+                || head_evolutions.find(evo_level_range_checker);
+            const body_evo_level_range_filter_passed = body_evolutions.length === 0
+                || body_evolutions.find(evo_level_range_checker);
+    
+            const evolution_level_range_filter_passed = filter_state.evolution_level_range_filter_condition
+                ? head_evo_level_range_filter_passed && body_evo_level_range_filter_passed
+                : head_evo_level_range_filter_passed || body_evo_level_range_filter_passed;
+            if (!evolution_level_range_filter_passed) {
+                return false;
+            }
         }
 
         if (poke.is_fused) {
@@ -380,7 +407,11 @@ async function main() {
             Weaknesses: null,
             Resistances: null,
             Immunities: null
-        }
+        },
+        evolution_level_range_filter_enabled: false,
+        evolution_level_range_filter_condition: false,
+        evolution_level_range_filter_min: 1,
+        evolution_level_range_filter_max: 100,
     };
 
     const apply_sorting_and_filtering = () => {
@@ -426,6 +457,14 @@ async function main() {
             : filter_state.highlighted_names;
         filter_state.show_customless = Boolean(new_state.show_customless);
         filter_state.only_show_customless = Boolean(new_state.only_show_customless);
+        filter_state.evolution_level_range_filter_enabled = Boolean(new_state.evolution_level_range_filter_enabled);
+        filter_state.evolution_level_range_filter_condition = Boolean(new_state.evolution_level_range_filter_condition);
+        filter_state.evolution_level_range_filter_min = Object.hasOwn(new_state, "evolution_level_range_filter_min")
+            ? new_state.evolution_level_range_filter_min
+            : filter_state.evolution_level_range_filter_min;
+        filter_state.evolution_level_range_filter_max = Object.hasOwn(new_state, "evolution_level_range_filter_min")
+            ? new_state.evolution_level_range_filter_max
+            : filter_state.evolution_level_range_filter_max;
 
         // Try to detect legacy format
         const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);
@@ -466,7 +505,8 @@ async function main() {
                     m(NameFilter, { filter_state, unfused_names: game_data.pokemon_names }),
                     m(TypeFilter, { filter_state }),
                     m(AbilityFilter, { filter_state, all_abilities: game_data.abilities, sorted_pokemon }),
-                    m(ResistanceFilter, { filter_state })),
+                    m(ResistanceFilter, { filter_state }),
+                    m(EvolutionFilter, { filter_state, game_data })),
                 // Gallery
                 m("div.poke-gallery",
                     m(InfinityScroll, {
