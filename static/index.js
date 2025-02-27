@@ -154,23 +154,47 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
         }
 
         if (filter_state.evolution_level_range_filter_enabled) {
-            const evo_level_range_checker = evo => {
+            const is_base_evo = poke_id => {
+                const evos = game_data.evolutions[poke_id];
+                // Is base evo if has no previous evos
+                return !evos.some(evo => evo.is_preevo);
+            };
+            const is_peak_evo = poke_id => {
+                const evos = game_data.evolutions[poke_id];
+                // Is peak evo if has no further evos
+                return evos.every(evo => evo.is_preevo);
+            };
+            const evo_level_range_checker = (evo, has_prev, has_next) => {
                 const kind = evo.kind;
                 if ("Level" in kind) {
-                    return kind.Level >= filter_state.evolution_level_range_filter_min
-                        && kind.Level <= filter_state.evolution_level_range_filter_max;
+                    return evo.is_preevo
+                        ? has_prev && kind.Level <= filter_state.evolution_level_range_filter_max && kind.Level > filter_state.evolution_level_range_filter_min
+                        : has_next && kind.Level <= filter_state.evolution_level_range_filter_min && kind.Level > filter_state.evolution_level_range_filter_max;
                 }
                 return false;
             };
 
             const head_evolutions = game_data.evolutions[poke.head_id];
             const body_evolutions = game_data.evolutions[poke.body_id];
+            const head_is_base = is_base_evo(poke.head_id);
+            const body_is_base = is_base_evo(poke.body_id);
+            const head_is_peak = is_peak_evo(poke.head_id);
+            const body_is_peak = is_peak_evo(poke.body_id);
 
-            const head_evo_level_range_filter_passed = head_evolutions.length === 0
-                || head_evolutions.find(evo_level_range_checker);
-            const body_evo_level_range_filter_passed = body_evolutions.length === 0
-                || body_evolutions.find(evo_level_range_checker);
-    
+            let head_evo_level_range_filter_passed = head_evolutions.length === 0;
+            if (!head_evo_level_range_filter_passed) {
+                const has_prev = !head_is_base;
+                const has_next = !head_is_peak;
+                head_evo_level_range_filter_passed = head_evolutions.some(evo => evo_level_range_checker(evo, has_prev, has_next));
+            }
+
+            let body_evo_level_range_filter_passed = body_evolutions.length === 0;
+            if (!body_evo_level_range_filter_passed) {
+                const has_prev = !body_is_base;
+                const has_next = !body_is_peak;
+                body_evo_level_range_filter_passed = body_evolutions.some(evo => evo_level_range_checker(evo, has_prev, has_next));
+            }
+
             const evolution_level_range_filter_passed = filter_state.evolution_level_range_filter_condition
                 ? head_evo_level_range_filter_passed && body_evo_level_range_filter_passed
                 : head_evo_level_range_filter_passed || body_evo_level_range_filter_passed;
