@@ -153,6 +153,15 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
             return false;
         }
 
+        const head_evolutions = game_data.evolutions[poke.head_id];
+        const body_evolutions = game_data.evolutions[poke.body_id];
+
+        let foo = 1;
+        if (poke.head_id === 473 && poke.body_id === 424) {
+            foo = 1 + 1;
+        }
+
+        let evolution_level_range_filter_passed = !filter_state.evolution_level_range_filter_enabled;
         if (filter_state.evolution_level_range_filter_enabled) {
             const evo_level_range_checker = evo => {
                 const kind = evo.kind;
@@ -160,22 +169,58 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
                     return kind.Level >= filter_state.evolution_level_range_filter_min
                         && kind.Level <= filter_state.evolution_level_range_filter_max;
                 }
-                return false;
+                // Allow other kinds of evos
+                return true;
             };
 
-            const head_evolutions = game_data.evolutions[poke.head_id];
-            const body_evolutions = game_data.evolutions[poke.body_id];
-
             const head_evo_level_range_filter_passed = head_evolutions.length === 0
-                || head_evolutions.find(evo_level_range_checker);
+                || head_evolutions.some(evo_level_range_checker);
             const body_evo_level_range_filter_passed = body_evolutions.length === 0
-                || body_evolutions.find(evo_level_range_checker);
-    
-            const evolution_level_range_filter_passed = filter_state.evolution_level_range_filter_condition
+                || body_evolutions.some(evo_level_range_checker);
+
+            evolution_level_range_filter_passed = filter_state.evolution_level_range_filter_condition
                 ? head_evo_level_range_filter_passed && body_evo_level_range_filter_passed
                 : head_evo_level_range_filter_passed || body_evo_level_range_filter_passed;
-            if (!evolution_level_range_filter_passed) {
+        }
+
+        let evolution_item_filter_passed = !filter_state.evolution_item_filter_enabled;
+        if (filter_state.evolution_item_filter_enabled) {
+            const evo_item_checker = evo => {
+                return evo.is_preevo && "Item" in evo.kind;
+            };
+
+            const head_evo_item_filter_passed = filter_state.evolution_item_filter_required
+                ? head_evolutions.some(evo_item_checker)
+                : !head_evolutions.some(evo_item_checker);
+            const body_evo_item_filter_passed = filter_state.evolution_item_filter_required
+                ? body_evolutions.some(evo_item_checker)
+                : !body_evolutions.some(evo_item_checker);
+
+            evolution_item_filter_passed = filter_state.evolution_item_filter_condition
+                ? head_evo_item_filter_passed && body_evo_item_filter_passed
+                : head_evo_item_filter_passed || body_evo_item_filter_passed;
+        }
+
+        if (filter_state.evolution_filters_condition) {
+            if (filter_state.evolution_level_range_filter_enabled && !evolution_level_range_filter_passed) {
                 return false;
+            }
+            if (filter_state.evolution_item_filter_enabled && !evolution_item_filter_passed) {
+                return false;
+            }
+        } else {
+            const none_enabled = !filter_state.evolution_level_range_filter_enabled && !filter_state.evolution_item_filter_enabled;
+            if (!none_enabled) {
+                let passed = false;
+                if (filter_state.evolution_level_range_filter_enabled && evolution_level_range_filter_passed) {
+                    passed = true;
+                }
+                if (filter_state.evolution_item_filter_enabled && evolution_item_filter_passed) {
+                    passed = true;
+                }
+                if (!passed) {
+                    return false;
+                }
             }
         }
 
@@ -408,10 +453,14 @@ async function main() {
             Resistances: null,
             Immunities: null
         },
+        evolution_filters_condition: false,
         evolution_level_range_filter_enabled: false,
         evolution_level_range_filter_condition: false,
         evolution_level_range_filter_min: 1,
         evolution_level_range_filter_max: 100,
+        evolution_item_filter_enabled: false,
+        evolution_item_filter_condition: false,
+        evolution_item_filter_required: true,
     };
 
     const apply_sorting_and_filtering = () => {
@@ -457,6 +506,7 @@ async function main() {
             : filter_state.highlighted_names;
         filter_state.show_customless = Boolean(new_state.show_customless);
         filter_state.only_show_customless = Boolean(new_state.only_show_customless);
+        filter_state.evolution_filters_condition = Boolean(new_state.evolution_filters_condition);
         filter_state.evolution_level_range_filter_enabled = Boolean(new_state.evolution_level_range_filter_enabled);
         filter_state.evolution_level_range_filter_condition = Boolean(new_state.evolution_level_range_filter_condition);
         filter_state.evolution_level_range_filter_min = Object.hasOwn(new_state, "evolution_level_range_filter_min")
@@ -465,6 +515,9 @@ async function main() {
         filter_state.evolution_level_range_filter_max = Object.hasOwn(new_state, "evolution_level_range_filter_min")
             ? new_state.evolution_level_range_filter_max
             : filter_state.evolution_level_range_filter_max;
+        filter_state.evolution_item_filter_enabled = Boolean(new_state.evolution_item_filter_enabled);
+        filter_state.evolution_item_filter_condition = Boolean(new_state.evolution_item_filter_condition);
+        filter_state.evolution_item_filter_required = Boolean(new_state.evolution_item_filter_required);
 
         // Try to detect legacy format
         const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);
