@@ -23,6 +23,10 @@ struct Args {
     fusions_export: bool,
     #[arg(long)]
     sprites_export: bool,
+    #[arg(long)]
+    use_sprite_list_file: bool,
+    #[arg(long)]
+    auto_download_sprites: bool,
 }
 
 fn main() -> Result<()> {
@@ -41,7 +45,14 @@ fn main() -> Result<()> {
     }
 
     if args.sprites_export {
-        export_sprites(&data_dir, &graphics_dir, &args.output_dir, args.format)?;
+        export_sprites(
+            &data_dir,
+            &graphics_dir,
+            &args.output_dir,
+            args.format,
+            args.use_sprite_list_file,
+            args.auto_download_sprites,
+        )?;
     }
 
     return Ok(());
