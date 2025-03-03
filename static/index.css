@@ -289,3 +289,7 @@ body {
     padding: 0;
     margin: 0;
 }
+
+.confirming-button-confirm {
+    color: red;
+}

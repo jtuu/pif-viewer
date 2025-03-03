@@ -5,6 +5,7 @@ import { TypeFilter, standard_types } from "./TypeFilter.js";
 import { AbilityFilter } from "./AbilityFilter.js";
 import { ResistanceFilter } from "./ResistanceFilter.js";
 import { EvolutionFilter } from "./EvolutionFilter.js";
+import { ConfirmingButton } from "./ConfirmingButton.js";
 
 function condition(a, b, cond) {
     switch (cond) {
@@ -46,6 +47,56 @@ function get_resistance_value(types, poke, attacker_type_name) {
         }
     }
     return effectiveness;
+}
+
+function default_filter_state() {
+    return {
+        name_blacklist: new Set(),
+        name_whitelist: new Set(),
+        highlighted_names: new Set(),
+        exclusive_name_whitelist: false,
+        self_fusion_filter: true,
+        show_customless: false,
+        only_show_customless: false,
+        stat_sorting_options: {
+            "HP": false,
+            "ATK": false,
+            "DEF": false,
+            "SPA": false,
+            "SPD": false,
+            "SPE": false,
+            "BST": false,
+            "max(ATK, SPA)": false
+        },
+        stat_sorting_direction: false,
+        stat_minimum_filter: {
+            "HP": 0,
+            "ATK": 0,
+            "DEF": 0,
+            "SPA": 0,
+            "SPD": 0,
+            "SPE": 0,
+            "BST": 0,
+            "max(ATK, SPA)": 0
+        },
+        type_filter_condition: false,
+        type_filter: new Set(standard_types),
+        ability_filter: new Set(),
+        resistance_filter: standard_types.reduce((acc, cur) => { acc[cur] = { value: null, condition: "=" }; return acc; }, {}),
+        resistance_count_filter: {
+            Weaknesses: null,
+            Resistances: null,
+            Immunities: null
+        },
+        evolution_filters_condition: false,
+        evolution_level_range_filter_enabled: false,
+        evolution_level_range_filter_condition: false,
+        evolution_level_range_filter_min: 1,
+        evolution_level_range_filter_max: 100,
+        evolution_item_filter_enabled: false,
+        evolution_item_filter_condition: false,
+        evolution_item_filter_required: true,
+    };
 }
 
 function sort_and_filter(game_data, sprites_metadata, filter_state) {
@@ -155,11 +206,6 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
 
         const head_evolutions = game_data.evolutions[poke.head_id];
         const body_evolutions = game_data.evolutions[poke.body_id];
-
-        let foo = 1;
-        if (poke.head_id === 473 && poke.body_id === 424) {
-            foo = 1 + 1;
-        }
 
         let evolution_level_range_filter_passed = !filter_state.evolution_level_range_filter_enabled;
         if (filter_state.evolution_level_range_filter_enabled) {
@@ -415,53 +461,7 @@ async function main() {
     });
 
     const sorted_pokemon = [];
-    const filter_state = {
-        name_blacklist: new Set(),
-        name_whitelist: new Set(),
-        highlighted_names: new Set(),
-        exclusive_name_whitelist: false,
-        self_fusion_filter: true,
-        show_customless: false,
-        only_show_customless: false,
-        stat_sorting_options: {
-            "HP": false,
-            "ATK": false,
-            "DEF": false,
-            "SPA": false,
-            "SPD": false,
-            "SPE": false,
-            "BST": false,
-            "max(ATK, SPA)": false
-        },
-        stat_sorting_direction: false,
-        stat_minimum_filter: {
-            "HP": 0,
-            "ATK": 0,
-            "DEF": 0,
-            "SPA": 0,
-            "SPD": 0,
-            "SPE": 0,
-            "BST": 0,
-            "max(ATK, SPA)": 0
-        },
-        type_filter_condition: false,
-        type_filter: new Set(standard_types),
-        ability_filter: new Set(),
-        resistance_filter: standard_types.reduce((acc, cur) => { acc[cur] = { value: null, condition: "=" }; return acc; }, {}),
-        resistance_count_filter: {
-            Weaknesses: null,
-            Resistances: null,
-            Immunities: null
-        },
-        evolution_filters_condition: false,
-        evolution_level_range_filter_enabled: false,
-        evolution_level_range_filter_condition: false,
-        evolution_level_range_filter_min: 1,
-        evolution_level_range_filter_max: 100,
-        evolution_item_filter_enabled: false,
-        evolution_item_filter_condition: false,
-        evolution_item_filter_required: true,
-    };
+    const filter_state = default_filter_state();
 
     const apply_sorting_and_filtering = () => {
         const result = sort_and_filter(game_data, sprites_metadata, filter_state);
@@ -552,6 +552,13 @@ async function main() {
         },
         view() {
             return is_loading ? m("div.loading", "Loading...") : [
+                m("div", m(ConfirmingButton, {
+                    label: "🗑️ Clear all filters",
+                    confirm_label: "Confirm?",
+                    onconfirm: e => {
+                        Object.assign(filter_state, default_filter_state());
+                    }
+                })),
                 // Controls
                 m("div.controls",
                     m(StatFilter, { filter_state }),
