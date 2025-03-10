@@ -205,6 +205,22 @@ pub fn export_data(
     output_format: OutputFormat,
     export_fusions: bool,
 ) -> Result<()> {
+    let pokes_with_special_names = HashMap::from([
+        ("NIDORANfE", "Nidoran-Female"),
+        ("NIDORANmA", "Nidoran-Male"),
+        ("ORICORIO_1", "Oricorio-Baile"),
+        ("ORICORIO_2", "Oricorio-Pom-Pom"),
+        ("ORICORIO_3", "Oricorio-Pa'u"),
+        ("ORICORIO_4", "Oricorio-Sensu"),
+        ("MELOETTA_A", "Meloetta-Aria"),
+        ("MELOETTA_P", "Meloetta-Pirouette"),
+        ("U_NECROZMA", "Necrozma-Ultra"),
+        ("LYCANROC_D", "Lycanroc-Day"),
+        ("LYCANROC_N", "Lycanroc-Night"),
+        ("MINIOR_M", "Minior-Meteor"),
+        ("MINIOR_C", "Minior-Core"),
+    ]);
+
     let ability_data = read_ruby_file(&input_dir_path.join("abilities.dat"))?;
     let species_data = read_ruby_file(&input_dir_path.join("species.dat"))?;
     let type_data = read_ruby_file(&input_dir_path.join("types.dat"))?;
@@ -285,20 +301,9 @@ pub fn export_data(
         );
     });
 
-    // Add pokemon names
-    species_data
-        .as_hash()
-        .unwrap()
-        .values()
-        .for_each(|poke_any| {
-            let poke_obj = poke_any.as_object().unwrap();
-            let id: usize = poke_obj.get_field("@id_number");
-            let name = poke_obj.get_field("@real_name");
-            pokemon_names.insert(id.to_string(), name);
-        });
-
     // Create symbol->id lookup table for pokemon
     let mut poke_sym_map = HashMap::new();
+    // Add pokemon names
     species_data
         .as_hash()
         .unwrap()
@@ -307,6 +312,12 @@ pub fn export_data(
             let poke_obj = poke_any.as_object().unwrap();
             let id: u32 = poke_obj.get_field("@id_number");
             let sym: String = poke_obj.get_field("@id");
+            let name: String = if let Some(special_name) = pokes_with_special_names.get(&*sym) {
+                special_name.to_string()
+            } else {
+                poke_obj.get_field("@real_name")
+            };
+            pokemon_names.insert(id.to_string(), name);
             poke_sym_map.insert(sym, id);
         });
 

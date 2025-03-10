@@ -2,6 +2,7 @@ import { InputWidget } from "./InputWidget.js"
 
 const legendaries = [
     "Necrozma",
+    "Necrozma-Ultra",
     "Arceus", "Mewtwo",
     "Ho-Oh", "Lugia",
     "Rayquaza", "Dialga",
@@ -22,7 +23,8 @@ const legendaries = [
 ];
 
 const other_ubers = [
-    "Meloetta",
+    "Meloetta-Aria",
+    "Meloetta-Pirouette",
     "Goodra",
     "Metagross",
     "Garchomp",
