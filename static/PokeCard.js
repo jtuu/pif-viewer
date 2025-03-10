@@ -266,9 +266,13 @@ export const PokeCard = {
             ? head_name + "/" + body_name
             : head_name;
 
+        const alt_letter = all_alt_names[selected_sprite_idx - 1];
+        const alt_artist_ids = alt_letter in sprites_info.alt_artists
+            ? sprites_info.alt_artists[alt_letter]
+            : [];
         const artist_ids = selected_sprite_idx === 0
             ? sprites_info.main_artists
-            : sprites_info.alt_artists[all_alt_names[selected_sprite_idx - 1]];
+            : alt_artist_ids;
         let artist_names = m("span.unknown-artist", "Unknown artist");
         if (artist_ids.length > 0) {
             const names = artist_ids.map(id => sprites_metadata.artists[id]).join(" & ");
