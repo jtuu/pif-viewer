@@ -6,6 +6,9 @@ import { AbilityFilter } from "./AbilityFilter.js";
 import { ResistanceFilter } from "./ResistanceFilter.js";
 import { EvolutionFilter } from "./EvolutionFilter.js";
 import { ConfirmingButton } from "./ConfirmingButton.js";
+import { SpriteFilter } from "./SpriteFilter.js";
+
+const TRIPLE_FUSION_ID_START = 999999;
 
 function condition(a, b, cond) {
     switch (cond) {
@@ -96,6 +99,9 @@ function default_filter_state() {
         evolution_item_filter_enabled: false,
         evolution_item_filter_condition: false,
         evolution_item_filter_required: true,
+        display_shiny_sprites: false,
+        is_head_shiny: false,
+        is_body_shiny: false
     };
 }
 
@@ -308,7 +314,7 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
 }
 
 function is_triple_fusion(poke) {
-    return poke.head_id >= 999999;
+    return poke.head_id >= TRIPLE_FUSION_ID_START;
 }
 
 function calculate_fused_stat(dom, sub) {
@@ -422,6 +428,14 @@ async function download_files() {
         game_data.contains_fusions = true;
     }
 
+    let nb_pokemon = 0;
+    for (const key of Object.keys(game_data.pokemon_names)) {
+        if (parseInt(key) < TRIPLE_FUSION_ID_START) {
+            nb_pokemon += 1;
+        }
+    }
+    game_data.nb_pokemon = nb_pokemon;
+
     for (const poke of game_data.pokemon) {
         poke.abilities = new Set(poke.abilities);
         poke.hidden_abilities = new Set(poke.hidden_abilities);
@@ -518,6 +532,9 @@ async function main() {
         filter_state.evolution_item_filter_enabled = Boolean(new_state.evolution_item_filter_enabled);
         filter_state.evolution_item_filter_condition = Boolean(new_state.evolution_item_filter_condition);
         filter_state.evolution_item_filter_required = Boolean(new_state.evolution_item_filter_required);
+        filter_state.display_shiny_sprites = Boolean(new_state.display_shiny_sprites);
+        filter_state.is_head_shiny = Boolean(new_state.is_head_shiny);
+        filter_state.is_body_shiny = Boolean(new_state.is_body_shiny);
 
         // Try to detect legacy format
         const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);
@@ -566,7 +583,8 @@ async function main() {
                     m(TypeFilter, { filter_state }),
                     m(AbilityFilter, { filter_state, all_abilities: game_data.abilities, sorted_pokemon }),
                     m(ResistanceFilter, { filter_state }),
-                    m(EvolutionFilter, { filter_state, game_data })),
+                    m(EvolutionFilter, { filter_state, game_data }),
+                    m(SpriteFilter, { filter_state })),
                 // Gallery
                 m("div.poke-gallery",
                     m(InfinityScroll, {
@@ -585,6 +603,7 @@ async function main() {
                             return data.map(poke => m(PokeCard, {
                                 key: poke_key(poke),
                                 poke,
+                                filter_state,
                                 game_data,
                                 sprites_metadata
                             }));
