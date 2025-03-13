@@ -11,13 +11,18 @@ export function poke_key(poke) {
 
 function sprite_url(poke, alt = "main") {
     const alt_char = alt === "main" ? "" : alt;
-    if (poke.is_fused) {
+    if (poke.triple_fusion_ids) {
+        return `split_sprites/special/${poke.triple_fusion_ids[0]}.${poke.triple_fusion_ids[1]}.${poke.triple_fusion_ids[2]}${alt_char}.png`;
+    } else if (poke.is_fused) {
         return `split_sprites/${poke.head_id}/${poke.head_id}.${poke.body_id}${alt_char}.png`;
     }
     return `split_sprites/${poke.head_id}/${poke.head_id}${alt_char}.png`;
 }
 
 function details_url(poke) {
+    if (poke.triple_fusion_ids) {
+        return `https://infinitefusiondex.com/details/${poke.triple_fusion_ids.join(".")}`;
+    }
     return `https://infinitefusiondex.com/details/${poke_key(poke)}`;
 }
 
@@ -236,7 +241,7 @@ export const PokeCard = {
 
         const key = poke_key(poke);
         const sprites_info = sprites_metadata.sprites[key] || {
-            base_name: String,
+            base_name: "",
             is_fused: poke.is_fused,
             has_main: false,
             alt_count: 0,
@@ -253,11 +258,7 @@ export const PokeCard = {
             sprite_names[i + 1] = all_alt_names[i];
         }
 
-        const poke_types = [poke.type1];
-        if (poke.type1 !== poke.type2) {
-            poke_types.push(poke.type2);
-        }
-        const poke_type_names = poke_types.map(id => game_data.types[id].name);
+        const poke_type_names = poke.types.map(id => game_data.types[id].name);
 
         const head_name = game_data.pokemon_names[poke.head_id];
         const body_name = game_data.pokemon_names[poke.body_id];
@@ -280,7 +281,7 @@ export const PokeCard = {
         }
 
         const is_shiny = filter_state.display_shiny_sprites;
-        const display_autogen_placeholder = selected_sprite_idx === 0 && !sprites_info.has_main;
+        const display_autogen_placeholder = selected_sprite_idx === 0 && !sprites_info.has_main && !poke.triple_fusion_ids;
         const url = display_autogen_placeholder
             ? "autogen_placeholder.png"
             : sprite_url(poke, sprite_names[selected_sprite_idx]);

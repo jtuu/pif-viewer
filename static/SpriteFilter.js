@@ -67,6 +67,40 @@ export const SpriteFilter = {
                             filter_state.show_customless = true;
                             filter_state.only_show_customless = e.target.checked;
                         }
+                    }), "Only"))),
+            m("hr"),
+            m("div",
+                m("strong", "Show triple fusions"),
+                m("div",
+                    m("label", m("input", {
+                        type: "radio",
+                        name: "triple-fusion-filter",
+                        value: "no",
+                        checked: !filter_state.show_triple_fusions,
+                        onchange: e => {
+                            filter_state.show_triple_fusions = !e.target.checked;
+                            filter_state.only_show_triple_fusions = false;
+                        }
+                    }), "No"),
+                    m("label", m("input", {
+                        type: "radio",
+                        name: "triple-fusion-filter",
+                        value: "yes",
+                        checked: filter_state.show_triple_fusions,
+                        onchange: e => {
+                            filter_state.show_triple_fusions = e.target.checked;
+                            filter_state.only_show_triple_fusions = false;
+                        }
+                    }), "Yes"),
+                    m("label", m("input", {
+                        type: "radio",
+                        name: "triple-fusion-filter",
+                        value: "only",
+                        checked: filter_state.only_show_triple_fusions,
+                        onchange: e => {
+                            filter_state.show_triple_fusions = true;
+                            filter_state.only_show_triple_fusions = e.target.checked;
+                        }
                     }), "Only")))
         )
     }

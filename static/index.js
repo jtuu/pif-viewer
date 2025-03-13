@@ -10,6 +10,35 @@ import { SpriteFilter } from "./SpriteFilter.js";
 
 const TRIPLE_FUSION_ID_START = 999999;
 
+const TRIPLE_FUSIONS_HARDCODED_DATA = {
+    [TRIPLE_FUSION_ID_START + 0]: [144, 145, 146],
+    //[TRIPLE_FUSION_ID_START + 1]: [144, 145, 146],
+    [TRIPLE_FUSION_ID_START + 2]: [243, 244, 245],
+    [TRIPLE_FUSION_ID_START + 3]: [340, 341, 342],
+    [TRIPLE_FUSION_ID_START + 4]: [343, 344, 345],
+    [TRIPLE_FUSION_ID_START + 5]: [349, 350, 351],
+    [TRIPLE_FUSION_ID_START + 6]: [151, 251, 381],
+    [TRIPLE_FUSION_ID_START + 11]: [150, 348, 380],
+    [TRIPLE_FUSION_ID_START + 7]: [3, 6, 9],
+    [TRIPLE_FUSION_ID_START + 8]: [154, 157, 160],
+    [TRIPLE_FUSION_ID_START + 9]: [278, 281, 284],
+    [TRIPLE_FUSION_ID_START + 10]: [318, 321, 324],
+    [TRIPLE_FUSION_ID_START + 12]: [1, 4, 7],
+    [TRIPLE_FUSION_ID_START + 13]: [2, 5, 8],
+    [TRIPLE_FUSION_ID_START + 14]: [152, 155, 158],
+    [TRIPLE_FUSION_ID_START + 15]: [153, 156, 159],
+    [TRIPLE_FUSION_ID_START + 16]: [276, 279, 282],
+    [TRIPLE_FUSION_ID_START + 17]: [277, 280, 283],
+    [TRIPLE_FUSION_ID_START + 18]: [316, 319, 322],
+    [TRIPLE_FUSION_ID_START + 19]: [317, 320, 323],
+    [TRIPLE_FUSION_ID_START + 21]: [144, 145, 146],
+    [TRIPLE_FUSION_ID_START + 24]: [343, 344, 345],
+    [TRIPLE_FUSION_ID_START + 27]: [447, 448, 449],
+    [TRIPLE_FUSION_ID_START + 28]: [479, 482, 485],
+    [TRIPLE_FUSION_ID_START + 29]: [480, 483, 486],
+    [TRIPLE_FUSION_ID_START + 30]: [481, 484, 487],
+};
+
 function condition(a, b, cond) {
     switch (cond) {
         case "=":
@@ -28,26 +57,23 @@ function condition(a, b, cond) {
     return false;
 }
 
+function calculate_type_effectiveness(types, defender_type, attacker_type) {
+    const t = types[defender_type];
+    if (t.weaknesses.includes(attacker_type)) {
+        return 2;
+    } else if (t.resistances.includes(attacker_type)) {
+        return 0.5;
+    } else if (t.immunities.includes(attacker_type)) {
+        return 0;
+    }
+    return 1;
+}
+
 function get_resistance_value(types, poke, attacker_type_name) {
     const attacker_type = Object.values(types).find(tp => tp.name.toLowerCase() === attacker_type_name.toLowerCase()).id;
     let effectiveness = 1;
-    const type1 = types[poke.type1];
-    if (type1.weaknesses.includes(attacker_type)) {
-        effectiveness *= 2;
-    } else if (type1.resistances.includes(attacker_type)) {
-        effectiveness *= 0.5;
-    } else if (type1.immunities.includes(attacker_type)) {
-        effectiveness *= 0;
-    }
-    if (effectiveness > 0 && poke.type1 !== poke.type2) {
-        const type2 = types[poke.type2];
-        if (type2.weaknesses.includes(attacker_type)) {
-            effectiveness *= 2;
-        } else if (type2.resistances.includes(attacker_type)) {
-            effectiveness *= 0.5;
-        } else if (type2.immunities.includes(attacker_type)) {
-            effectiveness *= 0;
-        }
+    for (const tp of poke.types) {
+        effectiveness *= calculate_type_effectiveness(types, tp, attacker_type);
     }
     return effectiveness;
 }
@@ -101,7 +127,9 @@ function default_filter_state() {
         evolution_item_filter_required: true,
         display_shiny_sprites: false,
         is_head_shiny: false,
-        is_body_shiny: false
+        is_body_shiny: false,
+        show_triple_fusions: true,
+        only_show_triple_fusions: false,
     };
 }
 
@@ -148,7 +176,7 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
             }
         }
 
-        const self_fusion_filter_passed = !filter_state.self_fusion_filter || poke.head_id !== poke.body_id;
+        const self_fusion_filter_passed = !filter_state.self_fusion_filter || poke.head_id !== poke.body_id || !!poke.triple_fusion_ids;
         if (!self_fusion_filter_passed) {
             return false;
         }
@@ -187,15 +215,14 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
             return false;
         }
 
-        const type1_name = game_data.types[poke.type1].name.toUpperCase();
-        const type2_name = game_data.types[poke.type2].name.toUpperCase();
+        const type_names = poke.types.map(tp => game_data.types[tp].name.toUpperCase());
 
-        const type_filter_every_passed = !filter_state.type_filter_condition || type_filter_array.every(tp => type1_name === tp || type2_name === tp);
+        const type_filter_every_passed = !filter_state.type_filter_condition || type_filter_array.every(tp => type_names.indexOf(tp) !== -1);
         if (!type_filter_every_passed) {
             return false;
         }
 
-        const type_filter_some_passed = filter_state.type_filter_condition || (filter_state.type_filter.has(type1_name) || filter_state.type_filter.has(type2_name));
+        const type_filter_some_passed = filter_state.type_filter_condition || type_names.some(name => filter_state.type_filter.has(name));
         if (!type_filter_some_passed) {
             return false;
         }
@@ -207,6 +234,13 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
             ? !sprites_info || !sprites_info.has_main
             : (filter_state.show_customless || (sprites_info && (sprites_info.has_main || sprites_info.alt_count > 0)));
         if (!customless_filter_passed) {
+            return false;
+        }
+
+        const triple_fusions_filter_passed = filter_state.only_show_triple_fusions
+            ? !!poke.triple_fusion_ids
+            : filter_state.show_triple_fusions || !poke.triple_fusion_ids;
+        if (!triple_fusions_filter_passed) {
             return false;
         }
 
@@ -389,10 +423,12 @@ function generate_fusions(game_data) {
     const unfused_pokemon = game_data.pokemon.slice();
 
     // Add self-fusions
-    for (let i = 0; i < unfused_pokemon.length; i++) {
-        const copy = Object.assign({}, unfused_pokemon[i]);
-        copy.is_fused = true;
-        game_data.pokemon.push(copy);
+    for (const poke of unfused_pokemon) {
+        if (!is_triple_fusion(poke)) {
+            const copy = Object.assign({}, poke);
+            copy.is_fused = true;
+            game_data.pokemon.push(copy);
+        }
     }
 
     // Add fused pokemon
@@ -436,9 +472,53 @@ async function download_files() {
     }
     game_data.nb_pokemon = nb_pokemon;
 
+    // Split triple types into single types
+    const triple_type_map = {};
+    for (const tp of Object.values(game_data.types)) {
+        if (tp.name.includes("/")) {
+            const parts = tp.name.split("/");
+            const ids = parts.map(p => Object.values(game_data.types).find(t => t.name === p).id);
+            triple_type_map[tp.id] = ids;
+        }
+    }
+
     for (const poke of game_data.pokemon) {
         poke.abilities = new Set(poke.abilities);
         poke.hidden_abilities = new Set(poke.hidden_abilities);
+
+        if (poke.head_id in TRIPLE_FUSIONS_HARDCODED_DATA) {
+            poke.triple_fusion_ids = TRIPLE_FUSIONS_HARDCODED_DATA[poke.head_id];
+            sprites_metadata.sprites[poke.head_id] = {
+                base_name: poke.triple_fusion_ids.join("."),
+                has_main: true,
+                is_fused: true,
+                alt_count: 0,
+                main_artists: [],
+                alt_artists: {}
+            };
+        }
+
+        if (poke.type1 === poke.type2) {
+            if (poke.type1 in triple_type_map) {
+                poke.types = triple_type_map[poke.type1];
+            } else {
+                poke.types = [poke.type1];
+            }
+        } else {
+            if (poke.type1 in triple_type_map && poke.type2 in triple_type_map) {
+                poke.types = triple_type_map[poke.type1].concat(triple_type_map[poke.type2]);
+            } else if (poke.type1 in triple_type_map) {
+                if (isNaN(poke.type2)) {
+                    poke.types = triple_type_map[poke.type1];
+                } else {
+                    poke.types = triple_type_map[poke.type1].concat([poke.type2]);
+                }
+            } else if (poke.type2 in triple_type_map) {
+                poke.types = [poke.type1].concat(triple_type_map[poke.type2]);
+            } else {
+                poke.types = [poke.type1, poke.type2];
+            }
+        }
     }
 
     return { game_data, sprites_metadata };
@@ -535,6 +615,8 @@ async function main() {
         filter_state.display_shiny_sprites = Boolean(new_state.display_shiny_sprites);
         filter_state.is_head_shiny = Boolean(new_state.is_head_shiny);
         filter_state.is_body_shiny = Boolean(new_state.is_body_shiny);
+        filter_state.show_triple_fusions = Boolean(new_state.show_triple_fusions);
+        filter_state.only_show_triple_fusions = Boolean(new_state.only_show_triple_fusions);
 
         // Try to detect legacy format
         const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);

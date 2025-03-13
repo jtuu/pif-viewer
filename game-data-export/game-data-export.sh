@@ -10,7 +10,7 @@ clone_files=(
     "/Data/sprites/CUSTOM_SPRITES"
     "/Data/sprites/BASE_SPRITES"
 )
-clone_dirs=("/Graphics/CustomBattlers/spritesheets")
+clone_dirs=("/Graphics/CustomBattlers/spritesheets" "/Graphics/Battlers/special")
 
 input_dir="input"
 output_dir="output"
@@ -68,6 +68,7 @@ else
     cp "$output_file" "$result_dir"
     cp "$sprites_file" "$result_dir"
     cp -r "$sprites_dir" "$result_dir"
+    cp -r "$input_dir/$pif_repo_name/Graphics/Battlers/special" "$result_dir/split_sprites"
     # Save version identifier
     echo "$data_version" > "$version_file"
 fi
