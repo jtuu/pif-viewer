@@ -69,8 +69,7 @@ function calculate_type_effectiveness(types, defender_type, attacker_type) {
     return 1;
 }
 
-function get_resistance_value(types, poke, attacker_type_name) {
-    const attacker_type = Object.values(types).find(tp => tp.name.toLowerCase() === attacker_type_name.toLowerCase()).id;
+function get_resistance_value(types, poke, attacker_type) {
     let effectiveness = 1;
     for (const tp of poke.types) {
         effectiveness *= calculate_type_effectiveness(types, tp, attacker_type);
@@ -108,8 +107,9 @@ function default_filter_state() {
             "BST": 0,
             "max(ATK, SPA)": 0
         },
+        type_filter_enabled: false,
         type_filter_condition: false,
-        type_filter: new Set(standard_types),
+        type_filter: new Set(),
         ability_filter: new Set(),
         resistance_filter: standard_types.reduce((acc, cur) => { acc[cur] = { value: null, condition: "=" }; return acc; }, {}),
         resistance_count_filter: {
@@ -134,18 +134,23 @@ function default_filter_state() {
 }
 
 function sort_and_filter(game_data, sprites_metadata, filter_state) {
-    // Filter by name and type
-    const type_filter_array = Array.from(filter_state.type_filter);
-    const min_stat_keys = Object.keys(filter_state.stat_minimum_filter);
+    const min_stat_keys = Object.keys(filter_state.stat_minimum_filter).filter(k => filter_state.stat_minimum_filter[k]);
+    const enabled_resistance_filters = [];
+    for (const [type_name, filter] of Object.entries(filter_state.resistance_filter)) {
+        if (filter.value !== null) {
+            filter.name = type_name;
+            enabled_resistance_filters.push(filter);
+        }
+    }
+    const standard_type_ids = standard_types.map(n => {
+        const t = Object.values(game_data.types).find(t => t.name.toUpperCase() === n);
+        return t && t.id;
+    }).filter(t => !isNaN(t));
 
     const filtered_pokemon = game_data.pokemon.filter(poke => {
-        const resistance_filter_passed = Object.keys(filter_state.resistance_filter).every(tp => {
-            const filter = filter_state.resistance_filter[tp];
-            if (filter.value !== null) {
-                const resist = get_resistance_value(game_data.types, poke, tp);
-                return condition(resist, filter.value, filter.condition);
-            }
-            return true;
+        const resistance_filter_passed = enabled_resistance_filters.length === 0 || enabled_resistance_filters.every(filter => {
+            const resist = get_resistance_value(game_data.types, poke, filter.id);
+            return condition(resist, filter.value, filter.condition);
         });
         if (!resistance_filter_passed) {
             return false;
@@ -153,6 +158,7 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
 
         if (filter_state.resistance_count_filter.Weaknesses !== null || filter_state.resistance_count_filter.Resistances !== null || filter_state.resistance_count_filter.Immunities !== null) {
             if (!Object.hasOwn(poke, "resistance_counts")) {
+                // Cache resistance counts
                 const resistance_counts = {
                     "0": 0,
                     "0.25": 0,
@@ -161,8 +167,8 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
                     "2": 0,
                     "4": 0
                 };
-                for (const type of standard_types) {
-                    const resist = get_resistance_value(game_data.types, poke, type);
+                for (const type_id of standard_type_ids) {
+                    const resist = get_resistance_value(game_data.types, poke, type_id);
                     resistance_counts[resist] += 1;
                 }
                 poke.resistance_counts = resistance_counts;
@@ -215,15 +221,10 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
             return false;
         }
 
-        const type_names = poke.types.map(tp => game_data.types[tp].name.toUpperCase());
-
-        const type_filter_every_passed = !filter_state.type_filter_condition || type_filter_array.every(tp => type_names.indexOf(tp) !== -1);
-        if (!type_filter_every_passed) {
-            return false;
-        }
-
-        const type_filter_some_passed = filter_state.type_filter_condition || type_names.some(name => filter_state.type_filter.has(name));
-        if (!type_filter_some_passed) {
+        const type_filter_passed = !filter_state.type_filter_enabled || (filter_state.type_filter_condition
+            ? poke.types.every(tp => filter_state.type_filter.has(tp))
+            : poke.types.some(tp => filter_state.type_filter.has(tp)));
+        if (!type_filter_passed) {
             return false;
         }
 
@@ -319,30 +320,41 @@ function sort_and_filter(game_data, sprites_metadata, filter_state) {
 
     // Precompute selected stat keys
     const sum_stat_keys = [];
+    let min_stat_keys_includes_max_atk_stat = false;
     for (const key of Object.keys(filter_state.stat_sorting_options)) {
         if (filter_state.stat_sorting_options[key]) {
-            sum_stat_keys.push(key.toLowerCase());
+            const k = key.toLowerCase();
+            if (k === "max(atk, spa)") {
+                min_stat_keys_includes_max_atk_stat = true;
+            } else {
+                sum_stat_keys.push(k);
+            }
         }
     }
 
     // Sort by stat sum
-    filtered_pokemon.sort((a, b) => {
-        let sum_a = 0;
-        let sum_b = 0;
-        for (const key of sum_stat_keys) {
-            if (key === "max(atk, spa)") {
-                sum_a += Math.max(a.atk, a.spa);
-                sum_b += Math.max(b.atk, b.spa);
-            } else {
+    if (min_stat_keys_includes_max_atk_stat) {
+        // This code is very hot so try to fast-track some conditions
+        filtered_pokemon.sort((a, b) => {
+            let sum_a = Math.max(a.atk, a.spa);
+            let sum_b = Math.max(b.atk, b.spa);
+            for (const key of sum_stat_keys) {
                 sum_a += a[key];
                 sum_b += b[key];
             }
-        }
-        if (filter_state.stat_sorting_direction) {
-            return sum_a - sum_b;
-        }
-        return sum_b - sum_a;
-    });
+            return sum_b - sum_a;
+        });
+    } else {
+        filtered_pokemon.sort((a, b) => {
+            let sum_a = 0;
+            let sum_b = 0;
+            for (const key of sum_stat_keys) {
+                sum_a += a[key];
+                sum_b += b[key];
+            }
+            return sum_b - sum_a;
+        });
+    }
 
     return filtered_pokemon;
 }
@@ -584,6 +596,7 @@ async function main() {
         filter_state.stat_sorting_options = new_state.stat_sorting_options;
         filter_state.stat_sorting_direction = new_state.stat_sorting_direction;
         filter_state.stat_minimum_filter = new_state.stat_minimum_filter;
+        filter_state.type_filter_enabled = Boolean(new_state.type_filter_enabled);
         filter_state.type_filter_condition = new_state.type_filter_condition;
         filter_state.type_filter = new Set(new_state.type_filter);
         filter_state.ability_filter = Object.hasOwn(new_state, "ability_filter") ? new Set(new_state.ability_filter) : new Set();
@@ -630,6 +643,9 @@ async function main() {
         if (contains_nan_item(Array.from(filter_state.ability_filter))) {
             filter_state.ability_filter.clear();
         }
+        if (contains_nan_item(Array.from(filter_state.type_filter))) {
+            filter_state.type_filter.clear();
+        }
 
         apply_sorting_and_filtering();
     };
@@ -662,7 +678,7 @@ async function main() {
                 m("div.controls",
                     m(StatFilter, { filter_state }),
                     m(NameFilter, { filter_state, unfused_names: game_data.pokemon_names }),
-                    m(TypeFilter, { filter_state }),
+                    m(TypeFilter, { filter_state, game_data }),
                     m(AbilityFilter, { filter_state, all_abilities: game_data.abilities, sorted_pokemon }),
                     m(ResistanceFilter, { filter_state }),
                     m(EvolutionFilter, { filter_state, game_data }),
