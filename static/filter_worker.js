@@ -379,10 +379,19 @@ function filter(filter_state) {
         if (!move_filter_passed) {
             return false;
         }
+
         if (poke.triple_fusion_ids) {
-            return !(poke.triple_fusion_ids.some(id => filter_state.name_blacklist.has(id)));
+            if (filter_state.name_blacklist_half_only) {
+                return !(poke.triple_fusion_ids.every(id => filter_state.name_blacklist.has(id)));
+            } else {
+                return !(poke.triple_fusion_ids.some(id => filter_state.name_blacklist.has(id)));
+            }
         } else if (poke.is_fused) {
-            return !(filter_state.name_blacklist.has(poke.head_id) || filter_state.name_blacklist.has(poke.body_id));
+            if (filter_state.name_blacklist_half_only) {
+                return !(filter_state.name_blacklist.has(poke.head_id) && filter_state.name_blacklist.has(poke.body_id));
+            } else {
+                return !(filter_state.name_blacklist.has(poke.head_id) || filter_state.name_blacklist.has(poke.body_id));
+            }
         } else {
             return !filter_state.name_blacklist.has(poke.head_id);
         }

@@ -94,7 +94,8 @@ function default_filter_state() {
         show_triple_fusions: true,
         only_show_triple_fusions: false,
         move_filter: new Set(),
-        move_filter_type: null
+        move_filter_type: null,
+        name_blacklist_half_only: false
     };
 }
 
@@ -499,6 +500,7 @@ async function main() {
         filter_state.only_show_triple_fusions = Boolean(new_state.only_show_triple_fusions);
         filter_state.move_filter = Object.hasOwn(new_state, "move_filter") ? new Set(new_state.move_filter) : new Set();
         filter_state.move_filter_type = isNaN(new_state.move_filter_type) ? null : new_state.move_filter_type;
+        filter_state.name_blacklist_half_only = Boolean(new_state.name_blacklist_half_only);
 
         // Try to detect legacy format
         const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);

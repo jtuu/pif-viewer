@@ -168,12 +168,21 @@ export const NameFilter = {
                 m("button", {
                     onclick: e => add_to_blacklist(names_to_ids(other_strong))
                 }, "Strong")),
-            m("div", m("label", m("input", {
-                type: "checkbox",
-                checked: filter_state.exclusive_name_whitelist,
-                onchange: e => {
-                    filter_state.exclusive_name_whitelist = e.target.checked;
-                }
-            }), "Strict whitelist")));
+            m("div", m("label", { title: "Both halves of the fusion must exist in whitelist" },
+                m("input", {
+                    type: "checkbox",
+                    checked: filter_state.exclusive_name_whitelist,
+                    onchange: e => {
+                        filter_state.exclusive_name_whitelist = e.target.checked;
+                    }
+                }), "Strict whitelist")),
+            m("div", m("label", { title: "One half of the fusion is allowed to exist in blacklist, but not both" },
+                m("input", {
+                    type: "checkbox",
+                    checked: filter_state.name_blacklist_half_only,
+                    onchange: e => {
+                        filter_state.name_blacklist_half_only = e.target.checked;
+                    }
+                }), "Relaxed blacklist")));
     }
 };
