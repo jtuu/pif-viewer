@@ -425,7 +425,7 @@ pub fn export_sprites(
             }
 
             if !download_sprites || spritesheet_split_result.failed_splits.is_empty() {
-                if !use_sprite_list_file {
+                if use_sprite_list_file {
                     println!(
                         "Encountered blank sprites in spritesheet '{}': {:?}",
                         spritesheet_info.get_name(),
