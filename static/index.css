@@ -77,9 +77,13 @@ body {
     margin-left: 10px;
 }
 
-#name-filter-list, #ability-filter-list {
+#name-filter-list, #ability-filter-list, #move-filter-list {
     width: 100%;
     height: 100%;
+}
+
+#move-filter-list {
+    font-family: monospace;
 }
 
 .type-label-list {

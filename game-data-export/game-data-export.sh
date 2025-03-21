@@ -6,9 +6,11 @@ clone_files=(
     "/Data/abilities.dat"
     "/Data/species.dat"
     "/Data/types.dat"
+    "/Data/moves.dat"
     "/Data/sprites/Sprite Credits.csv"
     "/Data/sprites/CUSTOM_SPRITES"
     "/Data/sprites/BASE_SPRITES"
+    "/Data/Scripts/052_AddOns/FusionMoveTutor.rb"
 )
 clone_dirs=("/Graphics/CustomBattlers/spritesheets" "/Graphics/Battlers/special")
 

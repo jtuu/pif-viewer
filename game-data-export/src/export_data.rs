@@ -99,6 +99,19 @@ struct PokemonType {
     immunities: Vec<u32>,
 }
 
+#[derive(Serialize, Clone)]
+struct BattleMove {
+    id: u32,
+    name: String,
+    type_id: u32,
+    category: u32,
+    power: u32,
+    accuracy: u32,
+    learners: Vec<u32>,
+    tutor_learners: Vec<u32>,
+    egg_learners: Vec<u32>,
+}
+
 #[derive(Serialize)]
 struct ResultFile {
     contains_fusions: bool,
@@ -111,6 +124,7 @@ struct ResultFile {
     pokemon: Vec<ParsedPokemon>,
     // Key is numeric id of pokemon as string
     evolutions: HashMap<String, Vec<Evolution>>,
+    moves: HashMap<String, BattleMove>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -224,6 +238,7 @@ pub fn export_data(
     let ability_data = read_ruby_file(&input_dir_path.join("abilities.dat"))?;
     let species_data = read_ruby_file(&input_dir_path.join("species.dat"))?;
     let type_data = read_ruby_file(&input_dir_path.join("types.dat"))?;
+    let moves_data = read_ruby_file(&input_dir_path.join("moves.dat"))?;
 
     let mut abilities = HashMap::new();
     let mut pokemon_names = HashMap::new();
@@ -232,6 +247,7 @@ pub fn export_data(
     // Result will be vec but use hashmap here to deduplicate
     let mut pokemon = HashMap::new();
     let mut evolutions = HashMap::new();
+    let mut moves = HashMap::new();
 
     // Create name->id lookup table for abilities
     let mut ability_sym_map = HashMap::new();
@@ -301,6 +317,35 @@ pub fn export_data(
         );
     });
 
+    // Symbol->id lookup table for moves
+    let mut move_sym_map = HashMap::new();
+    moves_data.as_hash().unwrap().values().for_each(|move_any| {
+        let move_obj = move_any.as_object().unwrap();
+        let id: u32 = move_obj.get_field("@id_number");
+        let sym: String = move_obj.get_field("@id");
+        let name: String = move_obj.get_field("@real_name");
+        let type_name: String = move_obj.get_field("@type");
+        let type_id = *type_sym_map.get(&type_name).unwrap();
+        let category: u32 = move_obj.get_field("@category");
+        let accuracy: u32 = move_obj.get_field("@accuracy");
+        let power: u32 = move_obj.get_field("@base_damage");
+        move_sym_map.insert(sym, id);
+        moves.insert(
+            id.to_string(),
+            BattleMove {
+                id,
+                name,
+                type_id,
+                category,
+                power,
+                accuracy,
+                learners: Vec::new(),
+                tutor_learners: Vec::new(),
+                egg_learners: Vec::new(),
+            },
+        );
+    });
+
     // Create symbol->id lookup table for pokemon
     let mut poke_sym_map = HashMap::new();
     // Add pokemon names
@@ -328,8 +373,8 @@ pub fn export_data(
         .values()
         .for_each(|poke_any| {
             let poke_obj = poke_any.as_object().unwrap();
-            let id: u32 = poke_obj.get_field("@id_number");
-            let key = id.to_string();
+            let poke_id: u32 = poke_obj.get_field("@id_number");
+            let key = poke_id.to_string();
             // Hash contains duplicates for some reason
             if pokemon.contains_key(&key) {
                 return;
@@ -373,6 +418,57 @@ pub fn export_data(
             let bst = hp + atk + def + spa + spd + spe;
             let type1: String = poke_obj.get_field("@type1");
             let type2: String = poke_obj.get_field("@type2");
+
+            poke_obj
+                .fields
+                .get(&RbSymbol::from_str("@moves"))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .iter()
+                .for_each(|move_any| {
+                    let move_data = move_any.as_array().unwrap();
+                    let sym = move_data[1].as_symbol().unwrap().as_str().unwrap();
+                    let move_id = *move_sym_map.get(sym).unwrap();
+                    moves
+                        .get_mut(&move_id.to_string())
+                        .unwrap()
+                        .learners
+                        .push(poke_id);
+                });
+            poke_obj
+                .fields
+                .get(&RbSymbol::from_str("@tutor_moves"))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .iter()
+                .for_each(|move_any| {
+                    let sym = move_any.as_symbol().unwrap().as_str().unwrap();
+                    let move_id = *move_sym_map.get(sym).unwrap();
+                    moves
+                        .get_mut(&move_id.to_string())
+                        .unwrap()
+                        .tutor_learners
+                        .push(poke_id);
+                });
+            poke_obj
+                .fields
+                .get(&RbSymbol::from_str("@egg_moves"))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .iter()
+                .for_each(|move_any| {
+                    let sym = move_any.as_symbol().unwrap().as_str().unwrap();
+                    let move_id = *move_sym_map.get(sym).unwrap();
+                    moves
+                        .get_mut(&move_id.to_string())
+                        .unwrap()
+                        .egg_learners
+                        .push(poke_id);
+                });
+
             let abilities: Vec<String> = poke_obj.get_field("@abilities");
             let hidden_abilities: Vec<String> = poke_obj.get_field("@hidden_abilities");
             // Parse this pokemon's past and future evolutions
@@ -388,9 +484,10 @@ pub fn export_data(
                     .map(|evo_any| Evolution::from_rb(&poke_sym_map, &evo_any))
                     .collect(),
             );
+
             let poke = ParsedPokemon {
-                head_id: id,
-                body_id: id,
+                head_id: poke_id,
+                body_id: poke_id,
                 is_fused: false,
                 hp,
                 atk,
@@ -461,6 +558,7 @@ pub fn export_data(
         types,
         pokemon: sorted_pokemon,
         evolutions,
+        moves,
     };
 
     return match output_format {

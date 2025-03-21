@@ -7,6 +7,7 @@ import { ResistanceFilter } from "./ResistanceFilter.js";
 import { EvolutionFilter } from "./EvolutionFilter.js";
 import { ConfirmingButton } from "./ConfirmingButton.js";
 import { SpriteFilter } from "./SpriteFilter.js";
+import { MoveFilter } from "./MoveFilter.js";
 
 const TRIPLE_FUSION_ID_START = 999999;
 
@@ -92,12 +93,20 @@ function default_filter_state() {
         is_body_shiny: false,
         show_triple_fusions: true,
         only_show_triple_fusions: false,
+        move_filter: new Set(),
+        move_filter_type: null
     };
 }
 
 function init_filter_workers(num_workers, game_data, sprites_metadata) {
     const chunk_size = Math.floor(game_data.pokemon.length / num_workers);
     const workers = [];
+
+    const poke_name_map = {};
+    for (let i = 0; i < game_data.nb_pokemon; i++) {
+        const poke = game_data.pokemon[i];
+        poke_name_map[game_data.pokemon_names[poke.head_id].toUpperCase()] = poke.head_id;
+    }
 
     for (let i = 0; i < num_workers; i++) {
         const worker = new Worker("filter_worker.js");
@@ -121,8 +130,10 @@ function init_filter_workers(num_workers, game_data, sprites_metadata) {
             topic: "init", sprites_metadata, game_data: {
                 types: game_data.types,
                 evolutions: game_data.evolutions,
-                pokemon: game_data.pokemon.slice(chunk_start, chunk_end)
-            }
+                pokemon: game_data.pokemon.slice(chunk_start, chunk_end),
+                moves: game_data.moves,
+            },
+            poke_name_map
         });
         workers.push(worker);
     }
@@ -486,6 +497,8 @@ async function main() {
         filter_state.is_body_shiny = Boolean(new_state.is_body_shiny);
         filter_state.show_triple_fusions = Boolean(new_state.show_triple_fusions);
         filter_state.only_show_triple_fusions = Boolean(new_state.only_show_triple_fusions);
+        filter_state.move_filter = Object.hasOwn(new_state, "move_filter") ? new Set(new_state.move_filter) : new Set();
+        filter_state.move_filter_type = isNaN(new_state.move_filter_type) ? null : new_state.move_filter_type;
 
         // Try to detect legacy format
         const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);
@@ -542,7 +555,8 @@ async function main() {
                     m(AbilityFilter, { filter_state, game_data, sorted_pokemon }),
                     m(ResistanceFilter, { filter_state }),
                     m(EvolutionFilter, { filter_state, game_data }),
-                    m(SpriteFilter, { filter_state })),
+                    m(SpriteFilter, { filter_state }),
+                    m(MoveFilter, { game_data, filter_state })),
                 // Gallery
                 m("div.poke-gallery",
                     m(InfinityScroll, {
