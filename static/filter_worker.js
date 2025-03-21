@@ -252,19 +252,22 @@ function filter(filter_state) {
         }
 
         const exclusive_name_whitelist_filter_passed = (!filter_state.exclusive_name_whitelist || filter_state.name_whitelist.size === 0) ||
-            (filter_state.name_whitelist.has(poke.head_id) && filter_state.name_whitelist.has(poke.body_id));
+            (filter_state.name_whitelist.has(poke.head_id) && filter_state.name_whitelist.has(poke.body_id)) ||
+            (poke.triple_fusion_ids && poke.triple_fusion_ids.every(id => filter_state.name_whitelist.has(id)));
         if (!exclusive_name_whitelist_filter_passed) {
             return false;
         }
 
         const name_whitelist_filter_passed = (filter_state.exclusive_name_whitelist || filter_state.name_whitelist.size === 0) ||
-            (filter_state.name_whitelist.has(poke.head_id) || filter_state.name_whitelist.has(poke.body_id));
+            (filter_state.name_whitelist.has(poke.head_id) || filter_state.name_whitelist.has(poke.body_id)) ||
+            (poke.triple_fusion_ids && poke.triple_fusion_ids.some(id => filter_state.name_whitelist.has(id)));
         if (!name_whitelist_filter_passed) {
             return false;
         }
 
         const highlighted_names_filter_passed = filter_state.highlighted_names.size === 0 ||
-            filter_state.highlighted_names.has(poke.head_id) || filter_state.highlighted_names.has(poke.body_id);
+            (filter_state.highlighted_names.has(poke.head_id) || filter_state.highlighted_names.has(poke.body_id)) ||
+            (poke.triple_fusion_ids && poke.triple_fusion_ids.some(id => filter_state.name_whitelist.has(id)));
         if (!highlighted_names_filter_passed) {
             return false;
         }
@@ -376,8 +379,9 @@ function filter(filter_state) {
         if (!move_filter_passed) {
             return false;
         }
-
-        if (poke.is_fused) {
+        if (poke.triple_fusion_ids) {
+            return !(poke.triple_fusion_ids.some(id => filter_state.name_blacklist.has(id)));
+        } else if (poke.is_fused) {
             return !(filter_state.name_blacklist.has(poke.head_id) || filter_state.name_blacklist.has(poke.body_id));
         } else {
             return !filter_state.name_blacklist.has(poke.head_id);
