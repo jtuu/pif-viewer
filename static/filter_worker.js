@@ -205,6 +205,13 @@ function filter(filter_state) {
     }).filter(x => x);
 
     const filtered_pokemon = game_data.pokemon.filter(poke => {
+        const highlighted_names_filter_passed = filter_state.highlighted_names.size === 0 ||
+            (filter_state.highlighted_names.has(poke.head_id) || filter_state.highlighted_names.has(poke.body_id)) ||
+            (poke.triple_fusion_ids && poke.triple_fusion_ids.some(id => filter_state.highlighted_names.has(id)));
+        if (!highlighted_names_filter_passed) {
+            return false;
+        }
+
         const exclusive_name_whitelist_filter_passed = (!filter_state.exclusive_name_whitelist || filter_state.name_whitelist.size === 0) ||
             (filter_state.name_whitelist.has(poke.head_id) && filter_state.name_whitelist.has(poke.body_id)) ||
             (poke.triple_fusion_ids && poke.triple_fusion_ids.every(id => filter_state.name_whitelist.has(id)));
@@ -291,13 +298,6 @@ function filter(filter_state) {
         const ability_filter_passed = filter_state.ability_filter.size === 0 ||
             (poke.abilities.some(ab => filter_state.ability_filter.has(ab)) || poke.hidden_abilities.some(ab => filter_state.ability_filter.has(ab)));
         if (!ability_filter_passed) {
-            return false;
-        }
-
-        const highlighted_names_filter_passed = filter_state.highlighted_names.size === 0 ||
-            (filter_state.highlighted_names.has(poke.head_id) || filter_state.highlighted_names.has(poke.body_id)) ||
-            (poke.triple_fusion_ids && poke.triple_fusion_ids.some(id => filter_state.name_whitelist.has(id)));
-        if (!highlighted_names_filter_passed) {
             return false;
         }
 
