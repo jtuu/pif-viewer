@@ -340,21 +340,24 @@ function filter(filter_state) {
 
         let evolution_level_range_filter_passed = !filter_state.evolution_level_range_filter_enabled;
         if (filter_state.evolution_level_range_filter_enabled) {
+            const level_evo_filter = evo => {
+                const kind = evo.kind;
+                return Boolean(kind.Level || kind.LevelDay || kind.LevelNight);
+            };
             const evo_level_range_checker = evo => {
                 const kind = evo.kind;
                 const level = kind.Level || kind.LevelDay || kind.LevelNight;
-                if (!isNaN(level)) {
-                    return level >= filter_state.evolution_level_range_filter_min
-                        && level <= filter_state.evolution_level_range_filter_max;
-                }
-                // Allow other kinds of evos
-                return true;
+                return level >= filter_state.evolution_level_range_filter_min
+                    && level <= filter_state.evolution_level_range_filter_max;
             };
 
-            const head_evo_level_range_filter_passed = head_evolutions.length === 0
-                || head_evolutions.some(evo_level_range_checker);
-            const body_evo_level_range_filter_passed = body_evolutions.length === 0
-                || body_evolutions.some(evo_level_range_checker);
+            const head_level_evos = head_evolutions.filter(level_evo_filter);
+            const body_level_evos = body_evolutions.filter(level_evo_filter);
+
+            const head_evo_level_range_filter_passed = head_level_evos.length === 0
+                || head_level_evos.some(evo_level_range_checker);
+            const body_evo_level_range_filter_passed = body_level_evos.length === 0
+                || body_level_evos.some(evo_level_range_checker);
 
             evolution_level_range_filter_passed = filter_state.evolution_level_range_filter_condition
                 ? head_evo_level_range_filter_passed && body_evo_level_range_filter_passed
