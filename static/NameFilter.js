@@ -41,8 +41,27 @@ const other_strong = [
     "Blissey"
 ];
 
-function add_name_filter(unfused_names, id_, add_list, remove_list) {
-    const ids = Array.isArray(id_) ? id_ : [id_];
+function add_name_filter(game_data, unfused_names, id_, add_list, remove_list, add_all_evolutions) {
+    const ids = new Set(Array.isArray(id_) ? id_ : [id_]);
+
+    if (add_all_evolutions) {
+        // Find evos until no more new evos added
+        let frontier = Array.from(ids);
+        while (frontier.length > 0) {
+            const new_frontier = [];
+            for (const id of frontier) {
+                ids.add(id);
+                const evos = game_data.evolutions[id];
+                for (const evo of evos) {
+                    if (!ids.has(evo.evo_id)) {
+                        new_frontier.push(evo.evo_id);
+                    }
+                }
+            }
+            frontier = new_frontier;
+        }
+    }
+
     let ok = false;
     for (const id of ids) {
         if (id && !add_list.has(id) && id in unfused_names) {
@@ -58,9 +77,9 @@ function add_name_filter(unfused_names, id_, add_list, remove_list) {
 
 export const NameFilter = {
     view(vnode) {
-        const { filter_state, unfused_names } = vnode.attrs;
-        const add_to_blacklist = names => add_name_filter(unfused_names, names, filter_state.name_blacklist, filter_state.name_whitelist);
-        const add_to_whitelist = names => add_name_filter(unfused_names, names, filter_state.name_whitelist, filter_state.name_blacklist);
+        const { filter_state, game_data, unfused_names } = vnode.attrs;
+        const add_to_blacklist = names => add_name_filter(game_data, unfused_names, names, filter_state.name_blacklist, filter_state.name_whitelist, filter_state.name_filter_add_all_evolutions);
+        const add_to_whitelist = names => add_name_filter(game_data, unfused_names, names, filter_state.name_whitelist, filter_state.name_blacklist, filter_state.name_filter_add_all_evolutions);
         const make_optgroup = set => {
             if (set.size === 0) {
                 return m("option.empty-option", { label: "(Empty)", disabled: true });
@@ -144,6 +163,14 @@ export const NameFilter = {
                         filter_state.highlighted_names.clear();
                     }
                 }, "Clear")),
+            m("div", m("label",
+                m("input", {
+                    type: "checkbox",
+                    checked: filter_state.name_filter_add_all_evolutions,
+                    onchange: e => {
+                        filter_state.name_filter_add_all_evolutions = e.target.checked;
+                    }
+                }), "Add all evolutions")),
             m("datalist", { id: "poke-names" }, Object.entries(unfused_names).map(([id, name]) => m("option", { key: name, value: id, label: name }))),
             m("select", {
                 id: "name-filter-list",

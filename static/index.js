@@ -95,7 +95,8 @@ function default_filter_state() {
         only_show_triple_fusions: false,
         move_filter: new Set(),
         move_filter_type: null,
-        name_blacklist_half_only: false
+        name_blacklist_half_only: false,
+        name_filter_add_all_evolutions: false
     };
 }
 
@@ -501,6 +502,7 @@ async function main() {
         filter_state.move_filter = Object.hasOwn(new_state, "move_filter") ? new Set(new_state.move_filter) : new Set();
         filter_state.move_filter_type = isNaN(new_state.move_filter_type) ? null : new_state.move_filter_type;
         filter_state.name_blacklist_half_only = Boolean(new_state.name_blacklist_half_only);
+        filter_state.name_filter_add_all_evolutions = Boolean(new_state.name_filter_add_all_evolutions);
 
         // Try to detect legacy format
         const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);
@@ -552,7 +554,7 @@ async function main() {
                 // Controls
                 m("div.controls",
                     m(StatFilter, { filter_state }),
-                    m(NameFilter, { filter_state, unfused_names: game_data.pokemon_names }),
+                    m(NameFilter, { filter_state, game_data, unfused_names: game_data.pokemon_names }),
                     m(TypeFilter, { filter_state, game_data }),
                     m(AbilityFilter, { filter_state, game_data, sorted_pokemon }),
                     m(ResistanceFilter, { filter_state }),
