@@ -205,6 +205,49 @@ function filter(filter_state) {
     }).filter(x => x);
 
     const filtered_pokemon = game_data.pokemon.filter(poke => {
+        const exclusive_name_whitelist_filter_passed = (!filter_state.exclusive_name_whitelist || filter_state.name_whitelist.size === 0) ||
+            (filter_state.name_whitelist.has(poke.head_id) && filter_state.name_whitelist.has(poke.body_id)) ||
+            (poke.triple_fusion_ids && poke.triple_fusion_ids.every(id => filter_state.name_whitelist.has(id)));
+        if (!exclusive_name_whitelist_filter_passed) {
+            return false;
+        }
+
+        const name_whitelist_filter_passed = (filter_state.exclusive_name_whitelist || filter_state.name_whitelist.size === 0) ||
+            (filter_state.name_whitelist.has(poke.head_id) || filter_state.name_whitelist.has(poke.body_id)) ||
+            (poke.triple_fusion_ids && poke.triple_fusion_ids.some(id => filter_state.name_whitelist.has(id)));
+        if (!name_whitelist_filter_passed) {
+            return false;
+        }
+
+        if (poke.triple_fusion_ids) {
+            const name_blacklist_half_only_passed = !filter_state.name_blacklist_half_only ||
+                !(poke.triple_fusion_ids.every(id => filter_state.name_blacklist.has(id)));
+            if (!name_blacklist_half_only_passed) {
+                return false;
+            }
+
+            const name_blacklist_passed = !(poke.triple_fusion_ids.some(id => filter_state.name_blacklist.has(id)));
+            if (!name_blacklist_passed) {
+                return false;
+            }
+        } else if (poke.is_fused) {
+            const name_blacklist_half_only_passed = !filter_state.name_blacklist_half_only ||
+                !(filter_state.name_blacklist.has(poke.head_id) && filter_state.name_blacklist.has(poke.body_id));
+            if (!name_blacklist_half_only_passed) {
+                return false;
+            }
+
+            const name_blacklist_passed = !(filter_state.name_blacklist.has(poke.head_id) || filter_state.name_blacklist.has(poke.body_id));
+            if (!name_blacklist_passed) {
+                return false;
+            }
+        } else {
+            const name_blacklist_passed = !filter_state.name_blacklist.has(poke.head_id);
+            if (!name_blacklist_passed) {
+                return false;
+            }
+        }
+
         const resistance_filter_passed = enabled_resistance_filters.length === 0 || enabled_resistance_filters.every(filter => {
             const resist = get_resistance_value(game_data.types, poke, filter.type_id);
             return condition(resist, filter.value, filter.condition);
@@ -248,20 +291,6 @@ function filter(filter_state) {
         const ability_filter_passed = filter_state.ability_filter.size === 0 ||
             (poke.abilities.some(ab => filter_state.ability_filter.has(ab)) || poke.hidden_abilities.some(ab => filter_state.ability_filter.has(ab)));
         if (!ability_filter_passed) {
-            return false;
-        }
-
-        const exclusive_name_whitelist_filter_passed = (!filter_state.exclusive_name_whitelist || filter_state.name_whitelist.size === 0) ||
-            (filter_state.name_whitelist.has(poke.head_id) && filter_state.name_whitelist.has(poke.body_id)) ||
-            (poke.triple_fusion_ids && poke.triple_fusion_ids.every(id => filter_state.name_whitelist.has(id)));
-        if (!exclusive_name_whitelist_filter_passed) {
-            return false;
-        }
-
-        const name_whitelist_filter_passed = (filter_state.exclusive_name_whitelist || filter_state.name_whitelist.size === 0) ||
-            (filter_state.name_whitelist.has(poke.head_id) || filter_state.name_whitelist.has(poke.body_id)) ||
-            (poke.triple_fusion_ids && poke.triple_fusion_ids.some(id => filter_state.name_whitelist.has(id)));
-        if (!name_whitelist_filter_passed) {
             return false;
         }
 
@@ -313,9 +342,10 @@ function filter(filter_state) {
         if (filter_state.evolution_level_range_filter_enabled) {
             const evo_level_range_checker = evo => {
                 const kind = evo.kind;
-                if ("Level" in kind) {
-                    return kind.Level >= filter_state.evolution_level_range_filter_min
-                        && kind.Level <= filter_state.evolution_level_range_filter_max;
+                const level = kind.Level || kind.LevelDay || kind.LevelNight;
+                if (!isNaN(level)) {
+                    return level >= filter_state.evolution_level_range_filter_min
+                        && level <= filter_state.evolution_level_range_filter_max;
                 }
                 // Allow other kinds of evos
                 return true;
@@ -380,21 +410,7 @@ function filter(filter_state) {
             return false;
         }
 
-        if (poke.triple_fusion_ids) {
-            if (filter_state.name_blacklist_half_only) {
-                return !(poke.triple_fusion_ids.every(id => filter_state.name_blacklist.has(id)));
-            } else {
-                return !(poke.triple_fusion_ids.some(id => filter_state.name_blacklist.has(id)));
-            }
-        } else if (poke.is_fused) {
-            if (filter_state.name_blacklist_half_only) {
-                return !(filter_state.name_blacklist.has(poke.head_id) && filter_state.name_blacklist.has(poke.body_id));
-            } else {
-                return !(filter_state.name_blacklist.has(poke.head_id) || filter_state.name_blacklist.has(poke.body_id));
-            }
-        } else {
-            return !filter_state.name_blacklist.has(poke.head_id);
-        }
+        return true;
     });
 
     return filtered_pokemon;
