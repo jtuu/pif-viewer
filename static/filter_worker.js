@@ -340,24 +340,51 @@ function filter(filter_state) {
 
         let evolution_level_range_filter_passed = !filter_state.evolution_level_range_filter_enabled;
         if (filter_state.evolution_level_range_filter_enabled) {
-            const level_evo_filter = evo => {
-                const kind = evo.kind;
-                return Boolean(kind.Level || kind.LevelDay || kind.LevelNight);
-            };
-            const evo_level_range_checker = evo => {
-                const kind = evo.kind;
-                const level = kind.Level || kind.LevelDay || kind.LevelNight;
-                return level >= filter_state.evolution_level_range_filter_min
-                    && level <= filter_state.evolution_level_range_filter_max;
+            const process_evos = evos => {
+                let is_lowest_evo = true;
+                const level_evos = [];
+                // Filter out non-level evo conditions and figure out if poke is lowest evo in its chain.
+                for (const evo of evos) {
+                    if (evo.is_preevo) {
+                        is_lowest_evo = false;
+                    }
+                    const kind = evo.kind;
+                    if (kind.Level || kind.LevelDay || kind.LevelNight) {
+                        level_evos.push(evo);
+                    }
+                }
+                return [is_lowest_evo, level_evos];
             };
 
-            const head_level_evos = head_evolutions.filter(level_evo_filter);
-            const body_level_evos = body_evolutions.filter(level_evo_filter);
+            const check_evo_level = (is_lowest, level_evos) => {
+                // We want to know if the current pokemon is able to exist within the specified level range.
+                // That means we only need to check the level that the previous evo needs to evolve into the current pokemon.
+                // Assume evolution level is 1 if current pokemon is the lowest evolution in its chain.
+                if (is_lowest) {
+                    return 1 >= filter_state.evolution_level_range_filter_min &&
+                    1 <= filter_state.evolution_level_range_filter_max;
+                }
+                if (level_evos.length < 1) {
+                    return true;
+                }
+                for (const evo of level_evos) {
+                    const kind = evo.kind;
+                    const level = kind.Level || kind.LevelDay || kind.LevelNight;
+                    if (evo.is_preevo) {
+                        if (level >= filter_state.evolution_level_range_filter_min &&
+                            level <= filter_state.evolution_level_range_filter_max) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
 
-            const head_evo_level_range_filter_passed = head_level_evos.length === 0
-                || head_level_evos.some(evo_level_range_checker);
-            const body_evo_level_range_filter_passed = body_level_evos.length === 0
-                || body_level_evos.some(evo_level_range_checker);
+            const [head_is_lowest_evo, head_level_evos] = process_evos(head_evolutions);
+            const [body_is_lowest_evo, body_level_evos] = process_evos(body_evolutions);
+
+            const head_evo_level_range_filter_passed = check_evo_level(head_is_lowest_evo, head_level_evos);
+            const body_evo_level_range_filter_passed = check_evo_level(body_is_lowest_evo, body_level_evos);
 
             evolution_level_range_filter_passed = filter_state.evolution_level_range_filter_condition
                 ? head_evo_level_range_filter_passed && body_evo_level_range_filter_passed
