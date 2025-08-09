@@ -312,7 +312,7 @@ function filter(filter_state) {
         }
 
         const type_filter_passed = !filter_state.type_filter_enabled || (filter_state.type_filter_condition
-            ? poke.types.every(tp => filter_state.type_filter.has(tp))
+            ? (poke.types.length === filter_state.type_filter.size && poke.types.every(tp => filter_state.type_filter.has(tp)))
             : poke.types.some(tp => filter_state.type_filter.has(tp)));
         if (!type_filter_passed) {
             return false;
