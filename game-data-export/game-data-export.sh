@@ -3,24 +3,24 @@
 set -e
 
 clone_files_main_repo=(
-    "/Data/abilities.dat"
-    "/Data/species.dat"
-    "/Data/types.dat"
-    "/Data/moves.dat"
-    "/Data/sprites/Sprite Credits.csv"
-    "/Data/sprites/CUSTOM_SPRITES"
-    "/Data/sprites/BASE_SPRITES"
-    "/Data/Scripts/052_AddOns/FusionMoveTutor.rb"
+    "Data/abilities.dat"
+    "Data/species.dat"
+    "Data/types.dat"
+    "Data/moves.dat"
+    "Data/sprites/Sprite Credits.csv"
+    "Data/sprites/CUSTOM_SPRITES"
+    "Data/sprites/BASE_SPRITES"
+    "Data/Scripts/052_AddOns/FusionMoveTutor.rb"
 )
 clone_files_other_repo=(
-    "/CUSTOM_SPRITES"
-    "/BASE_SPRITES"
+    "CUSTOM_SPRITES"
+    "BASE_SPRITES"
 )
 overwrite_files=(
     "Data/sprites/CUSTOM_SPRITES,CUSTOM_SPRITES"
     "Data/sprites/BASE_SPRITES,BASE_SPRITES"
 )
-clone_dirs=("/Graphics/CustomBattlers/spritesheets" "/Graphics/Battlers/special")
+clone_dirs=("Graphics/CustomBattlers/spritesheets" "Graphics/Battlers/special")
 
 input_dir="input"
 output_dir="output"
@@ -47,16 +47,14 @@ cd "$input_dir"
 # Clone single branch with no files and no history
 if [ ! -d "$pif_repo_name" ]; then
     git clone -b releases --single-branch \
-        --depth 1 --no-checkout --filter=tree:0 \
+         --no-checkout --filter=blob:none \
         "https://github.com/infinitefusion/$pif_repo_name"
-        "$pif_repo_name"
 fi
 
 if [ ! -d "$other_repo_name" ]; then
     git clone -b master --single-branch \
-        --depth 1 --no-checkout --filter=tree:0 \
+        --no-checkout --filter=blob:none \
         "https://github.com/infinitefusion/$other_repo_name"
-        "$other_repo_name"
 fi
 
 cd "$pif_repo_name"
@@ -96,7 +94,8 @@ if [ -f "$version_file" ]; then
 else
     saved_data_version=""
 fi
-
+echo "$data_version"
+echo "$saved_data_version"
 if [ -f "$output_file" ] && [ -f "$sprites_file" ] && [ "$data_version" = "$saved_data_version" ]; then
     # Exported data already exists and is up to date
     echo "Data export already up to date"
