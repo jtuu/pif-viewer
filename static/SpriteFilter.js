@@ -11,31 +11,6 @@ export const SpriteFilter = {
             }), "Hide self-fusions")),
             m("hr"),
             m("div",
-                m("label", m("input", {
-                    type: "checkbox",
-                    checked: filter_state.display_shiny_sprites,
-                    onchange: e => {
-                        filter_state.display_shiny_sprites = e.target.checked;
-                    }
-                }), m("strong", "Display shiny sprites")),
-                m("label", m("input", {
-                    type: "checkbox",
-                    checked: filter_state.is_head_shiny,
-                    disabled: !filter_state.display_shiny_sprites,
-                    onchange: e => {
-                        filter_state.is_head_shiny = e.target.checked;
-                    }
-                }), "Head"),
-                m("label", m("input", {
-                    type: "checkbox",
-                    checked: filter_state.is_body_shiny,
-                    disabled: !filter_state.display_shiny_sprites,
-                    onchange: e => {
-                        filter_state.is_body_shiny = e.target.checked;
-                    }
-                }), "Body")),
-            m("hr"),
-            m("div",
                 m("strong", "Show fusions without custom sprites"),
                 m("div",
                     m("label", m("input", {
