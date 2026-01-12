@@ -41,7 +41,7 @@ const other_strong = [
     "Blissey"
 ];
 
-function add_name_filter(game_data, unfused_names, id_, add_list, remove_list, add_all_evolutions) {
+export function add_name_filter(game_data, unfused_names, id_, add_list, remove_list, add_all_evolutions, move_out_of_list = true) {
     const ids = new Set(Array.isArray(id_) ? id_ : [id_]);
 
     if (add_all_evolutions) {
@@ -65,11 +65,18 @@ function add_name_filter(game_data, unfused_names, id_, add_list, remove_list, a
     let ok = false;
     for (const id of ids) {
         if (id && !add_list.has(id) && id in unfused_names) {
-            if (remove_list.has(id)) {
-                remove_list.delete(id);
+            if (move_out_of_list) {
+                if (remove_list.has(id)) {
+                    remove_list.delete(id);
+                }
+                add_list.add(id);
+                ok = true;
+            } else {
+                if (!remove_list.has(id)) {
+                    add_list.add(id);
+                    ok = true;
+                }
             }
-            add_list.add(id);
-            ok = true;
         }
     }
     return ok;

@@ -1,6 +1,6 @@
 import { PokeCard, poke_key } from "./PokeCard.js";
 import { StatFilter } from "./StatFilter.js";
-import { NameFilter } from "./NameFilter.js";
+import { add_name_filter, NameFilter } from "./NameFilter.js";
 import { TypeFilter, standard_types } from "./TypeFilter.js";
 import { AbilityFilter } from "./AbilityFilter.js";
 import { ResistanceFilter } from "./ResistanceFilter.js";
@@ -591,6 +591,40 @@ async function main() {
             ];
         }
     });
+
+    // Don't feel like making UI for this so just gonna expose this function
+    window.load_names_from_save_file = async function(url, into_blacklist = false) {
+        const downloaded_bytes = await (await fetch(url)).arrayBuffer();
+        const save_data = marshal.load(downloaded_bytes, {
+            hashSymbolKeysToString: true,
+            ivarToString: ""
+        });
+        const ids = [];
+        for (const poke of save_data.player.party) {
+            if (!poke) continue;
+            if (poke.species_data.id_number > game_data.nb_pokemon) {
+                ids.push(poke.species_data.head_pokemon.id_number);
+                ids.push(poke.species_data.body_pokemon.id_number);
+            } else {
+                ids.push(poke.species_data.id_number);
+            }
+        }
+        for (const box of save_data.storage_system.boxes) {
+            for (const poke of box.pokemon) {
+                if (!poke) continue;
+                if (poke.species_data.id_number > game_data.nb_pokemon) {
+                    ids.push(poke.species_data.head_pokemon.id_number);
+                    ids.push(poke.species_data.body_pokemon.id_number);
+                } else {
+                    ids.push(poke.species_data.id_number);
+                }
+            }
+        }
+        const add_list = into_blacklist ? filter_state.name_blacklist : filter_state.name_whitelist;
+        const remove_list = into_blacklist ? filter_state.name_whitelist : filter_state.name_blacklist;
+        add_name_filter(game_data, game_data.pokemon_names, ids, add_list, remove_list, true, false);
+        m.redraw();
+    }
 }
 
 main();
