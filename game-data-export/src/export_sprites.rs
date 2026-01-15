@@ -84,6 +84,17 @@ impl SpriteInfo {
         }
         return alt_idx < self.alt_count;
     }
+
+    fn merge(&mut self, other: Self) {
+        if other.has_main && !self.has_main {
+            self.has_main = true;
+            self.main_artists = other.main_artists.clone();
+        }
+        if other.alt_count != self.alt_count {
+            self.alt_count += other.alt_count;
+            self.alt_artists.extend(other.alt_artists);
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -536,7 +547,20 @@ pub fn export_sprites(
 
             return Ok(successful_splits_map);
         })
-        .try_reduce(|| HashMap::new(), |mut a, b| {a.extend(b); return Ok(a)})?;
+        .try_reduce(|| HashMap::new(), |mut a, b| {
+            // Gotcha: Each parallel iterator has its own successful_splits_map.
+            // If different alt-spritesheets end up inside different iterators then
+            // the split maps will end up with differing sprite info for the same sprite.
+            // So we need to properly combine each sprite info.
+            for (k, v) in b {
+                if let Some(old) = a.get_mut(&k) {
+                    old.merge(v);
+                } else {
+                    a.insert(k, v);
+                }
+            }
+            return Ok(a);
+        })?;
 
     // Write a file containing information about sprites
     let sprites_metadata_result = Sprites {

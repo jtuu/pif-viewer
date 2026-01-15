@@ -100,7 +100,7 @@ if [ -f "$output_file" ] && [ -f "$sprites_file" ] && [ "$data_version" = "$save
     echo "Data export already up to date"
 else
     # Run export
-    cargo run --release -- -i "$input_dir/$pif_repo_name" -o "$output_dir" -f "$output_format" --data-export --sprites-export --auto-download-sprites
+    cargo run --release -- -i "$input_dir/$pif_repo_name" -o "$output_dir" -f "$output_format" --data-export --sprites-export --use-sprite-list-file
     cp "$output_file" "$result_dir"
     cp "$sprites_file" "$result_dir"
     cp -r "$sprites_dir" "$result_dir"
