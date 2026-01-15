@@ -19,7 +19,7 @@ function sprite_url(poke, alt = "main") {
     return `split_sprites/${poke.head_id}/${poke.head_id}${alt_char}.png`;
 }
 
-function details_url(poke) {
+export function details_url(poke) {
     if (poke.triple_fusion_ids) {
         return `https://infinitefusiondex.com/details/${poke.triple_fusion_ids.join(".")}`;
     }

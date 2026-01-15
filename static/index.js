@@ -1,4 +1,4 @@
-import { PokeCard, poke_key } from "./PokeCard.js";
+import { PokeCard, details_url, poke_key } from "./PokeCard.js";
 import { StatFilter } from "./StatFilter.js";
 import { add_name_filter, NameFilter } from "./NameFilter.js";
 import { TypeFilter, standard_types } from "./TypeFilter.js";
@@ -623,7 +623,28 @@ async function main() {
         const add_list = into_blacklist ? filter_state.name_blacklist : filter_state.name_whitelist;
         const remove_list = into_blacklist ? filter_state.name_whitelist : filter_state.name_blacklist;
         add_name_filter(game_data, game_data.pokemon_names, ids, add_list, remove_list, true, false);
-        m.redraw();
+        apply_sorting_and_filtering().then(() => m.redraw());
+    }
+
+    window.generate_random_party = function(party_size = 6) {
+        let pokes = [];
+        if (sorted_pokemon.length <= party_size) {
+            pokes = sorted_pokemon;
+        } else {
+            const indices = new Set();
+            for (let i = sorted_pokemon.length - party_size; i < sorted_pokemon.length; i++) {
+                const t = Math.floor(Math.random() * (i + 1));
+                if (indices.has(t)) {
+                    indices.add(i);
+                } else {
+                    indices.add(t);
+                }
+            }
+            pokes = Array.from(indices).map(i => game_data.pokemon[sorted_pokemon[i]]);
+        }
+        for (const poke of pokes) {
+            window.open(details_url(poke));
+        }
     }
 }
 
