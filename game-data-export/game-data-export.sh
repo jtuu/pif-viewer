@@ -3,18 +3,18 @@
 set -e
 
 clone_files_main_repo=(
-    "Data/abilities.dat"
-    "Data/species.dat"
-    "Data/types.dat"
-    "Data/moves.dat"
-    "Data/sprites/Sprite Credits.csv"
-    "Data/sprites/CUSTOM_SPRITES"
-    "Data/sprites/BASE_SPRITES"
-    "Data/Scripts/052_AddOns/FusionMoveTutor.rb"
+    "/Data/abilities.dat"
+    "/Data/species.dat"
+    "/Data/types.dat"
+    "/Data/moves.dat"
+    "/Data/sprites/Sprite Credits.csv"
+    "/Data/sprites/CUSTOM_SPRITES"
+    "/Data/sprites/BASE_SPRITES"
+    "/Data/Scripts/052_AddOns/FusionMoveTutor.rb"
 )
 clone_files_other_repo=(
-    "CUSTOM_SPRITES"
-    "BASE_SPRITES"
+    "/CUSTOM_SPRITES"
+    "/BASE_SPRITES"
 )
 overwrite_files=(
     "Data/sprites/CUSTOM_SPRITES,CUSTOM_SPRITES"
@@ -94,14 +94,13 @@ if [ -f "$version_file" ]; then
 else
     saved_data_version=""
 fi
-echo "$data_version"
-echo "$saved_data_version"
+
 if [ -f "$output_file" ] && [ -f "$sprites_file" ] && [ "$data_version" = "$saved_data_version" ]; then
     # Exported data already exists and is up to date
     echo "Data export already up to date"
 else
     # Run export
-    cargo run --release -- -i "$input_dir/$pif_repo_name" -o "$output_dir" -f "$output_format" --data-export --sprites-export --use-sprite-list-file --auto-download-sprites
+    cargo run --release -- -i "$input_dir/$pif_repo_name" -o "$output_dir" -f "$output_format" --data-export --sprites-export --auto-download-sprites
     cp "$output_file" "$result_dir"
     cp "$sprites_file" "$result_dir"
     cp -r "$sprites_dir" "$result_dir"

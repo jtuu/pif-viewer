@@ -38,6 +38,19 @@ impl SpritesheetInfo {
             self.head_id, alt_name
         );
     }
+
+    fn download_and_save(&self) -> Result<()> {
+        let spritesheet_url = self.get_download_url();
+        let response = reqwest::blocking::get(&spritesheet_url)
+            .with_context(|| format!("Failed to download file '{}'", &spritesheet_url))?;
+        let spritesheet_bytes = response.bytes()?;
+        let mut spritesheet_file = File::create(&self.path)
+            .with_context(|| format!("Failed to create file '{}'", self.path.display()))?;
+        spritesheet_file
+            .write_all(&spritesheet_bytes)
+            .with_context(|| format!("Failed to write file '{}'", self.path.display()))?;
+        return Ok(());
+    }
 }
 
 #[derive(Serialize, Clone)]
@@ -133,6 +146,21 @@ struct SpritesheetSplitResult {
     failed_splits: Vec<String>,
 }
 
+impl SpritesheetSplitResult {
+    fn give_sprite_info(
+        &self,
+        spritesheet_info: &SpritesheetInfo,
+        sprite_info_map: &mut HashMap<String, SpriteInfo>,
+        sprite_artist_map: &HashMap<String, Vec<usize>>,
+    ) {
+        for sprite_key in &self.successful_splits {
+            let alt_name = spritesheet_info.alt_name.as_deref().unwrap_or("");
+            let full_name = format!("{}{}", sprite_key, alt_name);
+            add_sprite_info(sprite_info_map, sprite_artist_map, &full_name);
+        }
+    }
+}
+
 /// Returns sprites that couldn't be split because they were blank.
 fn split_spritesheet(
     split_sprites_base_dir_path: &PathBuf,
@@ -192,8 +220,21 @@ fn split_spritesheet(
                 // Assume all sprites exist if no info map
                 true
             };
-            if sprite_exists {
-                // Cut sprite out of spritesheet and save it
+            // Cut sprite out of spritesheet
+            let sprite_x = col * SPRITE_SIZE;
+            let sprite_y = row * SPRITE_SIZE;
+            let sprite_img = spritesheet_img.crop_imm(sprite_x, sprite_y, SPRITE_SIZE, SPRITE_SIZE);
+            // Check if sprite actually contains pixels
+            let is_blank = {
+                let mut sprite_pixels = sprite_img.pixels();
+                let (_, _, first_pixel) = sprite_pixels.next().unwrap();
+                sprite_pixels.all(|(_, _, pixel)| pixel == first_pixel)
+            };
+            if sprite_exists && is_blank {
+                // Should exist but is somehow blank
+                blank_sprites.push(sprite_key.to_owned());
+            } else if !is_blank {
+                // Sprite can be split if it contains pixels
                 let sprite_filename = if spritesheet_info.is_fused {
                     make_fused_sprite_filename(
                         &spritesheet_info.head_id,
@@ -209,25 +250,10 @@ fn split_spritesheet(
                     make_unfused_sprite_filename(&spritesheet_info.head_id, alt_name.as_deref())
                 };
                 let sprite_path = split_sprites_dir_path.join(&sprite_filename);
-                let sprite_x = col * SPRITE_SIZE;
-                let sprite_y = row * SPRITE_SIZE;
-                let sprite_img =
-                    spritesheet_img.crop_imm(sprite_x, sprite_y, SPRITE_SIZE, SPRITE_SIZE);
-                // For some reason some sprites are blank even when they should exist
-                let is_blank = {
-                    let mut sprite_pixels = sprite_img.pixels();
-                    let (_, _, first_pixel) = sprite_pixels.next().unwrap();
-                    sprite_pixels.all(|(_, _, pixel)| pixel == first_pixel)
-                };
-                if is_blank {
-                    blank_sprites.push(sprite_key.to_owned());
-                } else {
-                    // Sprite is ready to be split
-                    sprite_img.save(&sprite_path).with_context(|| {
-                        format!("Failed to write file '{}'", sprite_path.display())
-                    })?;
-                    successful_splits.push(sprite_key.to_owned());
-                }
+                sprite_img
+                    .save(&sprite_path)
+                    .with_context(|| format!("Failed to write file '{}'", sprite_path.display()))?;
+                successful_splits.push(sprite_key.to_owned());
             };
         }
     }
@@ -373,12 +399,12 @@ pub fn export_sprites(
         None
     };
 
-    // Find all spritesheet files
-    let spritesheets = {
-        let mut spritesheet_info = Vec::new();
+    let spritesheets = if use_sprite_list_file {
+        // Find all spritesheet files in directories
+        let mut spritesheets = Vec::new();
 
         // Find unfused spritesheets
-        spritesheet_info.append(&mut find_spritesheets(
+        spritesheets.append(&mut find_spritesheets(
             &graphics_dir_path
                 .join("CustomBattlers")
                 .join("spritesheets")
@@ -399,10 +425,48 @@ pub fn export_sprites(
             if !entry_path.is_dir() {
                 continue;
             }
-            spritesheet_info.append(&mut find_spritesheets(&entry_path, true)?);
+            spritesheets.append(&mut find_spritesheets(&entry_path, true)?);
         }
 
-        spritesheet_info
+        spritesheets
+    } else if download_sprites {
+        // Generate SpritesheetInfo for every pokemon and then download all spritesheets
+        let mut spritesheets = Vec::new();
+        let num_pokes = 501;
+        let unfused_dir = graphics_dir_path
+            .join("CustomBattlers")
+            .join("spritesheets")
+            .join("spritesheets_base");
+        let fused_dir = graphics_dir_path
+            .join("CustomBattlers")
+            .join("spritesheets")
+            .join("spritesheets_custom");
+        for head_id in 1..=num_pokes {
+            let unfused_path = unfused_dir.join(format!("{}.png", head_id));
+            let fused_path = fused_dir.join(format!("{}.png", head_id));
+            let unfused_sheet = SpritesheetInfo {
+                path: unfused_path,
+                is_fused: false,
+                head_id: head_id.to_string(),
+                alt_name: None,
+            };
+            let fused_sheet = SpritesheetInfo {
+                path: fused_path,
+                is_fused: true,
+                head_id: head_id.to_string(),
+                alt_name: None,
+            };
+            spritesheets.push(unfused_sheet);
+            spritesheets.push(fused_sheet);
+        }
+
+        spritesheets.par_iter().try_for_each(|spritesheet_info| {
+            return spritesheet_info.download_and_save();
+        })?;
+
+        spritesheets
+    } else {
+        Vec::new()
     };
 
     let split_sprites_base_dir_path = output_dir_path.join("split_sprites");
@@ -418,20 +482,22 @@ pub fn export_sprites(
                 spritesheet_info,
             )?;
 
-            for sprite_key in &spritesheet_split_result.successful_splits {
-                let alt_name = spritesheet_info.alt_name.as_deref().unwrap_or("");
-                let full_name = format!("{}{}", sprite_key, alt_name);
-                add_sprite_info(&mut successful_splits_map, &sprite_artist_map, &full_name);
-            }
+            // Save SpriteInfo of successful splits
+            spritesheet_split_result.give_sprite_info(spritesheet_info, &mut successful_splits_map, &sprite_artist_map);
 
-            if !download_sprites || spritesheet_split_result.failed_splits.is_empty() {
-                if use_sprite_list_file {
-                    println!(
-                        "Encountered blank sprites in spritesheet '{}': {:?}",
-                        spritesheet_info.get_name(),
-                        spritesheet_split_result.failed_splits
-                    );
-                }
+            if spritesheet_split_result.failed_splits.is_empty() {
+                // Success
+                return Ok(successful_splits_map);
+            } else if !use_sprite_list_file {
+                // We can't know which sprites are supposed to exist
+                return Ok(successful_splits_map);
+            } else if !download_sprites {
+                // Not success but nothing we can do
+                println!(
+                    "Encountered blank sprites in spritesheet '{}': {:?}",
+                    spritesheet_info.get_name(),
+                    spritesheet_split_result.failed_splits
+                );
                 return Ok(successful_splits_map);
             }
 
@@ -442,24 +508,7 @@ pub fn export_sprites(
             );
 
             // Try download newer spritesheet from pif server
-            {
-                let spritesheet_url = spritesheet_info.get_download_url();
-                let response = reqwest::blocking::get(&spritesheet_url)
-                    .with_context(|| format!("Failed to download file '{}'", &spritesheet_url))?;
-                let spritesheet_bytes = response.bytes()?;
-                let mut spritesheet_file =
-                    File::create(&spritesheet_info.path).with_context(|| {
-                        format!(
-                            "Failed to create file '{}'",
-                            spritesheet_info.path.display()
-                        )
-                    })?;
-                spritesheet_file
-                    .write_all(&spritesheet_bytes)
-                    .with_context(|| {
-                        format!("Failed to write file '{}'", spritesheet_info.path.display())
-                    })?;
-            }
+            spritesheet_info.download_and_save()?;
 
             // Build new info map with just blank sprites
             let mut blank_sprites_info_map = HashMap::new();
@@ -470,12 +519,15 @@ pub fn export_sprites(
                 }
             }
 
-            // Retry splitting with new spritesheets
+            // Retry splitting with new spritesheet
             let spritesheet_split_result = split_spritesheet(
                 &split_sprites_base_dir_path,
                 Some(blank_sprites_info_map).as_ref(),
                 spritesheet_info,
             )?;
+
+            // Save SpriteInfo of successful splits
+            spritesheet_split_result.give_sprite_info(spritesheet_info, &mut successful_splits_map, &sprite_artist_map);
 
             if !spritesheet_split_result.failed_splits.is_empty() {
                 // Failed to split all sprites again, accept defeat
