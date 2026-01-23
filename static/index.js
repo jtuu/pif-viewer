@@ -8,6 +8,7 @@ import { EvolutionFilter } from "./EvolutionFilter.js";
 import { ConfirmingButton } from "./ConfirmingButton.js";
 import { SpriteFilter } from "./SpriteFilter.js";
 import { MoveFilter } from "./MoveFilter.js";
+import { hoenn_data } from "./hoenn_data.js";
 
 const TRIPLE_FUSION_ID_START = 999999;
 
@@ -96,7 +97,9 @@ function default_filter_state() {
         move_filter: new Set(),
         move_filter_type: null,
         name_blacklist_half_only: false,
-        name_filter_add_all_evolutions: false
+        name_filter_add_all_evolutions: false,
+        show_hoenn: false,
+        only_show_hoenn: false,
     };
 }
 
@@ -263,6 +266,11 @@ function fuse_pokemon(
         }
     }
 
+    const is_hoenn = head.is_hoenn || body.is_hoenn;
+    if (is_hoenn) {
+        debugger;
+    }
+
     return {
         head_id: head.head_id,
         body_id: body.body_id,
@@ -278,6 +286,7 @@ function fuse_pokemon(
         type2,
         abilities,
         hidden_abilities,
+        is_hoenn
     };
 }
 
@@ -320,6 +329,21 @@ async function download_files() {
 
     const sprites_metadata = files[0];
     const game_data = files[1];
+
+    // Add hoenn data
+    for (const poke of game_data.pokemon) {
+        poke.is_hoenn = false;
+    }
+    for (const poke of hoenn_data.pokemon) {
+        poke.is_hoenn = true;
+    }
+    for (const key of Object.keys(hoenn_data.pokemon_names)) {
+        game_data.pokemon_names[key] = hoenn_data.pokemon_names[key];
+    }
+    for (const key of Object.keys(hoenn_data.evolutions)) {
+        game_data.evolutions[key] = hoenn_data.evolutions[key];
+    }
+    game_data.pokemon = game_data.pokemon.concat(hoenn_data.pokemon);
 
     if (!game_data.contains_fusions) {
         generate_fusions(game_data);
@@ -503,6 +527,8 @@ async function main() {
         filter_state.move_filter_type = isNaN(new_state.move_filter_type) ? null : new_state.move_filter_type;
         filter_state.name_blacklist_half_only = Boolean(new_state.name_blacklist_half_only);
         filter_state.name_filter_add_all_evolutions = Boolean(new_state.name_filter_add_all_evolutions);
+        filter_state.show_hoenn = Boolean(new_state.show_hoenn);
+        filter_state.only_show_hoenn = Boolean(new_state.only_show_hoenn);
 
         // Try to detect legacy format
         const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);

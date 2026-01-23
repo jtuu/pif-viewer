@@ -335,6 +335,13 @@ function filter(filter_state) {
             return false;
         }
 
+        const hoenn_filter_passed = filter_state.only_show_hoenn
+            ? poke.is_hoenn
+            : filter_state.show_hoenn || !poke.is_hoenn;
+        if (!hoenn_filter_passed) {
+            return false;
+        }
+
         const head_evolutions = game_data.evolutions[poke.head_id];
         const body_evolutions = game_data.evolutions[poke.body_id];
 

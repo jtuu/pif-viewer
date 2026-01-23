@@ -76,6 +76,40 @@ export const SpriteFilter = {
                             filter_state.show_triple_fusions = true;
                             filter_state.only_show_triple_fusions = e.target.checked;
                         }
+                    }), "Only"))),
+            m("hr"),
+            m("div",
+                m("strong", "Show Hoenn pokemon"),
+                m("div",
+                    m("label", m("input", {
+                        type: "radio",
+                        name: "hoenn-filter",
+                        value: "no",
+                        checked: !filter_state.show_hoenn,
+                        onchange: e => {
+                            filter_state.show_hoenn = !e.target.checked;
+                            filter_state.only_show_hoenn = false;
+                        }
+                    }), "No"),
+                    m("label", m("input", {
+                        type: "radio",
+                        name: "hoenn-filter",
+                        value: "yes",
+                        checked: filter_state.show_hoenn,
+                        onchange: e => {
+                            filter_state.show_hoenn = e.target.checked;
+                            filter_state.only_show_hoenn = false;
+                        }
+                    }), "Yes"),
+                    m("label", m("input", {
+                        type: "radio",
+                        name: "hoenn-filter",
+                        value: "only",
+                        checked: filter_state.only_show_hoenn,
+                        onchange: e => {
+                            filter_state.show_hoenn = true;
+                            filter_state.only_show_hoenn = e.target.checked;
+                        }
                     }), "Only")))
         )
     }
