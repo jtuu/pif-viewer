@@ -214,7 +214,10 @@ fn fuse_pokemon(
 }
 
 pub fn export_data(
-    input_dir_path: &PathBuf,
+    abilities_file_path: &PathBuf,
+    species_file_path: &PathBuf,
+    types_file_path: &PathBuf,
+    moves_file_path: &PathBuf,
     output_dir_path: &PathBuf,
     output_format: OutputFormat,
     export_fusions: bool,
@@ -235,10 +238,10 @@ pub fn export_data(
         ("MINIOR_C", "Minior-Core"),
     ]);
 
-    let ability_data = read_ruby_file(&input_dir_path.join("abilities.dat"))?;
-    let species_data = read_ruby_file(&input_dir_path.join("species.dat"))?;
-    let type_data = read_ruby_file(&input_dir_path.join("types.dat"))?;
-    let moves_data = read_ruby_file(&input_dir_path.join("moves.dat"))?;
+    let ability_data = read_ruby_file(abilities_file_path)?;
+    let species_data = read_ruby_file(species_file_path)?;
+    let type_data = read_ruby_file(types_file_path)?;
+    let moves_data = read_ruby_file(moves_file_path)?;
 
     let mut abilities = HashMap::new();
     let mut pokemon_names = HashMap::new();

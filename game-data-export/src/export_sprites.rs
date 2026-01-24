@@ -3,6 +3,7 @@ use image::GenericImageView;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use serde::Serialize;
 use std::collections::{hash_map, HashMap, HashSet};
+use std::fs;
 use std::fs::{create_dir_all, read_dir, read_to_string, File};
 use std::io::Write;
 use std::path::PathBuf;
@@ -284,6 +285,13 @@ fn find_spritesheets(dir: &PathBuf, is_fused: bool) -> Result<Vec<SpritesheetInf
         if !dir_entry_path.is_file() {
             continue;
         }
+        if let Some(ext) = dir_entry_path.extension() {
+            if ext != "png" {
+                continue;
+            }
+        } else {
+            continue;
+        }
         let sheet_name_noext = dir_entry_path.file_stem().unwrap().to_str().unwrap();
         let head_id = get_sprite_base_name(sheet_name_noext).to_owned();
         let alt_name = get_sprite_alt_name(sheet_name_noext).map(|s| s.to_owned());
@@ -329,157 +337,14 @@ fn add_sprite_info(
     }
 }
 
-pub fn export_sprites(
-    data_dir_path: &PathBuf,
-    graphics_dir_path: &PathBuf,
+fn split_spritesheets(
+    spritesheets: &Vec<SpritesheetInfo>,
     output_dir_path: &PathBuf,
-    output_format: OutputFormat,
+    sprite_info_map: Option<&HashMap<String, SpriteInfo>>,
+    sprite_artist_map: &HashMap<String, Vec<usize>>,
     use_sprite_list_file: bool,
     download_sprites: bool,
-) -> Result<()> {
-    let (artists, sprite_artist_map) = {
-        let mut sprite_artist_map = HashMap::new();
-        let mut all_artists = HashSet::new();
-        let artist_credits_file_path = data_dir_path.join("sprites").join("Sprite Credits.csv");
-        let mut artist_credits_file = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .flexible(true)
-            .from_path(&artist_credits_file_path)
-            .with_context(|| {
-                format!(
-                    "Failed to read file '{}'",
-                    artist_credits_file_path.display()
-                )
-            })?;
-        // CSV file that contains information about who made the sprites.
-        // First column is sprite name.
-        // Second column is artist name, multiple artists are delimited by " & ".
-        // Other columns are probably not needed.
-        for row in artist_credits_file.records() {
-            let row = row?;
-            let sprite_name = row[0].to_string();
-            let artist_name = row[1].to_string();
-            let artist_names = artist_name
-                .split(" & ")
-                .map(|s| s.to_owned())
-                .collect::<Vec<String>>();
-            for artist in &artist_names {
-                all_artists.insert(artist.to_owned());
-            }
-            sprite_artist_map.insert(sprite_name, artist_names);
-        }
-
-        // Map artist names to this vec's indices
-        let all_artists = all_artists.into_iter().collect::<Vec<String>>();
-        let mut sprite_artist_id_map = HashMap::new();
-
-        for (sprite_name, artists) in &sprite_artist_map {
-            sprite_artist_id_map.insert(
-                sprite_name.to_owned(),
-                artists
-                    .iter()
-                    .map(|name| all_artists.iter().position(|a| a == name).unwrap())
-                    .collect::<Vec<usize>>(),
-            );
-        }
-
-        (all_artists, sprite_artist_id_map)
-    };
-
-    let sprite_info_map = if use_sprite_list_file {
-        let mut sprite_info_map: HashMap<String, SpriteInfo> = HashMap::new();
-        // These files have lists of all fused and unfused custom sprites
-        let fused_sprites_list_file =
-            read_to_string(data_dir_path.join("sprites").join("CUSTOM_SPRITES"))
-                .with_context(|| "Failed to read fused sprites list file")?;
-        let unfused_sprites_list_file =
-            read_to_string(data_dir_path.join("sprites").join("BASE_SPRITES"))
-                .with_context(|| "Failed to read unfused sprites list file")?;
-        // Sprite names are formatted as "<head_id>.<body_id><alt_char>.png"
-        for filename in fused_sprites_list_file
-            .lines()
-            .chain(unfused_sprites_list_file.lines())
-        {
-            // Strip file extension from name
-            if let Some(sprite_name) = filename.strip_suffix(".png") {
-                add_sprite_info(&mut sprite_info_map, &sprite_artist_map, sprite_name);
-            }
-        }
-        Some(sprite_info_map)
-    } else {
-        None
-    };
-
-    let spritesheets = if use_sprite_list_file {
-        // Find all spritesheet files in directories
-        let mut spritesheets = Vec::new();
-
-        // Find unfused spritesheets
-        spritesheets.append(&mut find_spritesheets(
-            &graphics_dir_path
-                .join("CustomBattlers")
-                .join("spritesheets")
-                .join("spritesheets_base"),
-            false,
-        )?);
-
-        // Find fused spritesheets
-        for entry in read_dir(
-            &graphics_dir_path
-                .join("CustomBattlers")
-                .join("spritesheets")
-                .join("spritesheets_custom"),
-        )? {
-            // Find spritesheet dirs in base dir
-            let entry = entry?;
-            let entry_path = entry.path();
-            if !entry_path.is_dir() {
-                continue;
-            }
-            spritesheets.append(&mut find_spritesheets(&entry_path, true)?);
-        }
-
-        spritesheets
-    } else if download_sprites {
-        // Generate SpritesheetInfo for every pokemon and then download all spritesheets
-        let mut spritesheets = Vec::new();
-        let num_pokes = 501;
-        let unfused_dir = graphics_dir_path
-            .join("CustomBattlers")
-            .join("spritesheets")
-            .join("spritesheets_base");
-        let fused_dir = graphics_dir_path
-            .join("CustomBattlers")
-            .join("spritesheets")
-            .join("spritesheets_custom");
-        for head_id in 1..=num_pokes {
-            let unfused_path = unfused_dir.join(format!("{}.png", head_id));
-            let fused_path = fused_dir.join(format!("{}.png", head_id));
-            let unfused_sheet = SpritesheetInfo {
-                path: unfused_path,
-                is_fused: false,
-                head_id: head_id.to_string(),
-                alt_name: None,
-            };
-            let fused_sheet = SpritesheetInfo {
-                path: fused_path,
-                is_fused: true,
-                head_id: head_id.to_string(),
-                alt_name: None,
-            };
-            spritesheets.push(unfused_sheet);
-            spritesheets.push(fused_sheet);
-        }
-
-        spritesheets.par_iter().try_for_each(|spritesheet_info| {
-            return spritesheet_info.download_and_save();
-        })?;
-
-        spritesheets
-    } else {
-        Vec::new()
-    };
-
+) -> Result<HashMap<String, SpriteInfo>> {
     let split_sprites_base_dir_path = output_dir_path.join("split_sprites");
     // Iterate through spritesheets and split them into individual image files
     let split_results = spritesheets
@@ -489,7 +354,7 @@ pub fn export_sprites(
         .try_fold(|| HashMap::new(), |mut successful_splits_map, spritesheet_info| {
             let spritesheet_split_result = split_spritesheet(
                 &split_sprites_base_dir_path,
-                sprite_info_map.as_ref(),
+                sprite_info_map,
                 spritesheet_info,
             )?;
 
@@ -561,6 +426,202 @@ pub fn export_sprites(
             }
             return Ok(a);
         })?;
+
+    return Ok(split_results);
+}
+
+pub fn export_sprites(
+    input_sprites_are_split: bool,
+    artist_credits_file_path: &PathBuf,
+    fused_sprites_dir_path: &PathBuf,
+    base_sprites_dir_path: &PathBuf,
+    output_dir_path: &PathBuf,
+    output_format: OutputFormat,
+    sprites_list_file_paths: Option<(&PathBuf, &PathBuf)>,
+    download_sprites: bool,
+) -> Result<()> {
+    let use_sprite_list_file = sprites_list_file_paths.is_some();
+
+    let (artists, sprite_artist_map) = {
+        let mut sprite_artist_map = HashMap::new();
+        let mut all_artists = HashSet::new();
+        let mut artist_credits_file = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .flexible(true)
+            .from_path(&artist_credits_file_path)
+            .with_context(|| {
+                format!(
+                    "Failed to read file '{}'",
+                    artist_credits_file_path.display()
+                )
+            })?;
+        // CSV file that contains information about who made the sprites.
+        // First column is sprite name.
+        // Second column is artist name, multiple artists are delimited by " & ".
+        // Other columns are probably not needed.
+        for row in artist_credits_file.records() {
+            let row = row?;
+            let sprite_name = row[0].to_string();
+            let artist_name = row[1].to_string();
+            let artist_names = artist_name
+                .split(" & ")
+                .map(|s| s.to_owned())
+                .collect::<Vec<String>>();
+            for artist in &artist_names {
+                all_artists.insert(artist.to_owned());
+            }
+            sprite_artist_map.insert(sprite_name, artist_names);
+        }
+
+        // Map artist names to this vec's indices
+        let all_artists = all_artists.into_iter().collect::<Vec<String>>();
+        let mut sprite_artist_id_map = HashMap::new();
+
+        for (sprite_name, artists) in &sprite_artist_map {
+            sprite_artist_id_map.insert(
+                sprite_name.to_owned(),
+                artists
+                    .iter()
+                    .map(|name| all_artists.iter().position(|a| a == name).unwrap())
+                    .collect::<Vec<usize>>(),
+            );
+        }
+
+        (all_artists, sprite_artist_id_map)
+    };
+
+    let sprite_info_map = if let Some((fused_sprites_list_file_path, base_sprites_list_file_path)) =
+        sprites_list_file_paths
+    {
+        let mut sprite_info_map: HashMap<String, SpriteInfo> = HashMap::new();
+        // These files have lists of all fused and unfused custom sprites
+        let fused_sprites_list_file = read_to_string(fused_sprites_list_file_path)
+            .with_context(|| "Failed to read fused sprites list file")?;
+        let unfused_sprites_list_file = read_to_string(base_sprites_list_file_path)
+            .with_context(|| "Failed to read unfused sprites list file")?;
+        // Sprite names are formatted as "<head_id>.<body_id><alt_char>.png"
+        for filename in fused_sprites_list_file
+            .lines()
+            .chain(unfused_sprites_list_file.lines())
+        {
+            // Strip file extension from name
+            if let Some(sprite_name) = filename.strip_suffix(".png") {
+                add_sprite_info(&mut sprite_info_map, &sprite_artist_map, sprite_name);
+            }
+        }
+        Some(sprite_info_map)
+    } else {
+        None
+    };
+
+    let spritesheets = if input_sprites_are_split {
+        Vec::new()
+    } else if use_sprite_list_file {
+        // Find all spritesheet files in directories
+        let mut spritesheets = Vec::new();
+
+        // Find unfused spritesheets
+        spritesheets.append(&mut find_spritesheets(base_sprites_dir_path, false)?);
+
+        // Find fused spritesheets
+        for entry in read_dir(fused_sprites_dir_path)? {
+            // Find spritesheet dirs in base dir
+            let entry = entry?;
+            let entry_path = entry.path();
+            if !entry_path.is_dir() {
+                continue;
+            }
+            spritesheets.append(&mut find_spritesheets(&entry_path, true)?);
+        }
+
+        spritesheets
+    } else if download_sprites {
+        // Generate SpritesheetInfo for every pokemon and then download all spritesheets
+        let mut spritesheets = Vec::new();
+        let num_pokes = 501;
+        for head_id in 1..=num_pokes {
+            let unfused_path = base_sprites_dir_path.join(format!("{}.png", head_id));
+            let fused_path = fused_sprites_dir_path.join(format!("{}.png", head_id));
+            let unfused_sheet = SpritesheetInfo {
+                path: unfused_path,
+                is_fused: false,
+                head_id: head_id.to_string(),
+                alt_name: None,
+            };
+            let fused_sheet = SpritesheetInfo {
+                path: fused_path,
+                is_fused: true,
+                head_id: head_id.to_string(),
+                alt_name: None,
+            };
+            spritesheets.push(unfused_sheet);
+            spritesheets.push(fused_sheet);
+        }
+
+        spritesheets.par_iter().try_for_each(|spritesheet_info| {
+            return spritesheet_info.download_and_save();
+        })?;
+
+        spritesheets
+    } else {
+        Vec::new()
+    };
+
+    let split_results = if input_sprites_are_split {
+        // Copy already split sprites from input dir to output dir
+        let mut sprite_info_map = HashMap::new();
+        let split_sprites_base_dir_path = output_dir_path.join("split_sprites");
+        let fused_sprites_dir = read_dir(fused_sprites_dir_path).with_context(|| format!("Failed to list directory '{}'", fused_sprites_dir_path.display()))?;
+        let base_sprites_dir = read_dir(base_sprites_dir_path).with_context(|| format!("Failed to list directory '{}'", base_sprites_dir_path.display()))?;
+        // Iterate files in input dirs
+        for dir_entry in fused_sprites_dir.chain(base_sprites_dir) {
+            let dir_entry = dir_entry?;
+            let dir_entry_path = dir_entry.path();
+            if !dir_entry_path.is_file() {
+                continue;
+            }
+            if let Some(ext) = dir_entry_path.extension() {
+                if ext != "png" {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+            let sprite_name_noext = dir_entry_path.file_stem().unwrap().to_str().unwrap();
+            // Gather metadata
+            add_sprite_info(&mut sprite_info_map, &sprite_artist_map, sprite_name_noext);
+            let name_parts = sprite_name_noext.split(".").collect::<Vec<_>>();
+            let sprite_output_dir_name = get_sprite_base_name(name_parts[0]);
+            let sprite_output_dir_path = split_sprites_base_dir_path.join(sprite_output_dir_name);
+            // Create output dir
+            create_dir_all(&sprite_output_dir_path).with_context(|| {
+                format!(
+                    "Failed to create directory '{}'",
+                    sprite_output_dir_path.display()
+                )
+            })?;
+            let sprite_filename = dir_entry_path.file_name().unwrap().to_str().unwrap();
+            let sprite_output_path = sprite_output_dir_path.join(sprite_filename);
+            // Copy sprite
+            fs::copy(dir_entry_path.clone(), sprite_output_path.clone()).with_context(|| {
+                format!(
+                    "Failed to copy file from '{}' to '{}'",
+                    dir_entry_path.display(),
+                    sprite_output_path.display()
+                )
+            })?;
+        }
+        sprite_info_map
+    } else {
+        split_spritesheets(
+            &spritesheets,
+            output_dir_path,
+            sprite_info_map.as_ref(),
+            &sprite_artist_map,
+            use_sprite_list_file,
+            download_sprites,
+        )?
+    };
 
     // Write a file containing information about sprites
     let sprites_metadata_result = Sprites {

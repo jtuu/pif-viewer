@@ -100,7 +100,19 @@ if [ -f "$output_file" ] && [ -f "$sprites_file" ] && [ "$data_version" = "$save
     echo "Data export already up to date"
 else
     # Run export
-    cargo run --release -- -i "$input_dir/$pif_repo_name" -o "$output_dir" -f "$output_format" --data-export --sprites-export --use-sprite-list-file
+    cargo run --release -- -o "$output_dir" -f "$output_format" \
+        --data-export \
+        --abilities-file-path "$input_dir/$pif_repo_name/Data/abilities.dat" \
+        --species-file-path "$input_dir/$pif_repo_name/Data/species.dat" \
+        --types-file-path "$input_dir/$pif_repo_name/Data/types.dat"
+        --moves-file-path "$input_dir/$pif_repo_name/Data/moves.dat"
+        --sprites-export \
+        --artist-credits-file-path "$input_dir/$pif_repo_name/Data/sprites/Sprite Credits.csv" \
+        --fused-sprites-dir-path "$input_dir/$pif_repo_name/Graphics/CustomBattlers/spritesheets/spritesheets_custom" \
+        --base-sprites-dir-path "$input_dir/$pif_repo_name/Graphics/CustomBattlers/spritesheets/spritesheets_base" \
+        --fused-sprites-list-file-path "$input_dir/$pif_repo_name/Data/sprites/CUSTOM_SPRITES" \
+        --base-sprites-list-file-path "$input_dir/$pif_repo_name/Data/sprites/BASE_SPRITES"
+
     cp "$output_file" "$result_dir"
     cp "$sprites_file" "$result_dir"
     cp -r "$sprites_dir" "$result_dir"
