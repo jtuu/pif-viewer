@@ -96,8 +96,8 @@ function get_resistance_value(types, poke, attacker_type) {
     return effectiveness;
 }
 
-function can_learn_move(poke, moves, move_id) {
-    const poke_id_match = id => id === poke.head_id || id === poke.body_id;
+function can_learn_move(poke_id, moves, move_id) {
+    const poke_id_match = id => id === poke_id;
     if (moves[move_id].learners.some(poke_id_match)) return true;
     if (moves[move_id].tutor_learners.some(poke_id_match)) return true;
     if (moves[move_id].egg_learners.some(poke_id_match)) return true;
@@ -439,8 +439,28 @@ function filter(filter_state) {
             }
         }
 
+        const preevos_and_self = [poke.head_id, poke.body_id];
+        // Recursively find all pre-evos
+        let search_evos = head_evolutions.concat(body_evolutions);
+        if (poke.body_id === 149) {
+            while (true) {
+                const added_preevos = [];
+                for (const evo of search_evos) {
+                    if (evo.is_preevo) {
+                        preevos_and_self.push(evo.evo_id);
+                        added_preevos.push(...game_data.evolutions[evo.evo_id]);
+                    }
+                }
+                if (added_preevos.length > 0) {
+                    search_evos = added_preevos;
+                } else {
+                    break;
+                }
+            }
+        }
+        
         const move_filter_passed = filter_state.move_filter.size === 0 ||
-            Array.from(filter_state.move_filter).some(move_id => can_learn_move(poke, game_data.moves, move_id)) ||
+            Array.from(filter_state.move_filter).some(move_id => preevos_and_self.some(poke_id => can_learn_move(poke_id, game_data.moves, move_id))) ||
             expert_moves.intersection(filter_state.move_filter).size > 0 &&
             get_expert_moves(poke, game_data.moves, poke_name_map, type_name_map, move_name_map).some(move_id => filter_state.move_filter.has(move_id));
         if (!move_filter_passed) {
