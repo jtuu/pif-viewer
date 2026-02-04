@@ -16,5 +16,5 @@ cargo run --release -- -o "output" -f "json" \
     --input-sprites-are-split
 
 cp "output/sprites_metadata.json" "$result_dir"
-cp -r "output/split_sprites" "$result_dir"
 cp "$pack_dir_path"/Other/Triples/*.png "$result_dir/split_sprites/special"
+./copy-changed-sprites.sh
