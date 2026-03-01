@@ -220,75 +220,79 @@ function calculate_fused_stat(dom, sub) {
     return Math.floor(((2 * dom) / 3) + (sub / 3));
 }
 
-function fuse_pokemon(
-    type_map,
-    head,
-    body
-) {
-    // Fusions can't be fused again
-    if (is_triple_fusion(head) || is_triple_fusion(body) || head.is_fused || body.is_fused) {
-        return null;
-    }
+const fuse_pokemon = (() => {
+    let normal_type_id = -1;
+    let flying_type_id = -1;
 
-    const hp = calculate_fused_stat(head.hp, body.hp);
-    const spa = calculate_fused_stat(head.spa, body.spa);
-    const spd = calculate_fused_stat(head.spd, body.spd);
-
-    const atk = calculate_fused_stat(body.atk, head.atk);
-    const def = calculate_fused_stat(body.def, head.def);
-    const spe = calculate_fused_stat(body.spe, head.spe);
-
-    const bst = hp + spa + spd + atk + def + spe;
-
-    // Normal/Flying types are special
-    const normal_type_id = Object.values(type_map).find(tp => tp.name.toLowerCase() === "normal").id;
-    const flying_type_id = Object.values(type_map).find(tp => tp.name.toLowerCase() === "normal").id;
-    const type1 = head.type1 == normal_type_id && head.type2 == flying_type_id
-        ? head.type2
-        : head.type1;
-
-    // Use other if same as head
-    const type2 = body.type2 == type1
-        ? body.type1
-        : body.type2;
-
-    const abilities = head.abilities.slice();
-    for (const ab of body.abilities) {
-        if (!abilities.includes(ab)) {
-            abilities.push(ab);
+    return function (
+        type_map,
+        head,
+        body) {
+        // Fusions can't be fused again
+        if (is_triple_fusion(head) || is_triple_fusion(body) || head.is_fused || body.is_fused) {
+            return null;
         }
-    }
 
-    const hidden_abilities = head.hidden_abilities.slice();
-    for (const ab of body.hidden_abilities) {
-        if (!hidden_abilities.includes(ab)) {
-            hidden_abilities.push(ab);
+        const hp = calculate_fused_stat(head.hp, body.hp);
+        const spa = calculate_fused_stat(head.spa, body.spa);
+        const spd = calculate_fused_stat(head.spd, body.spd);
+
+        const atk = calculate_fused_stat(body.atk, head.atk);
+        const def = calculate_fused_stat(body.def, head.def);
+        const spe = calculate_fused_stat(body.spe, head.spe);
+
+        const bst = hp + spa + spd + atk + def + spe;
+
+        if (normal_type_id === -1) {
+            normal_type_id = Object.values(type_map).find(tp => tp.name.toLowerCase() === "normal").id;
+            flying_type_id = Object.values(type_map).find(tp => tp.name.toLowerCase() === "flying").id;
         }
-    }
+        
+        // Normal/Flying types are special
+        const type1 = head.type1 == normal_type_id && head.type2 == flying_type_id
+            ? head.type2
+            : head.type1;
 
-    const is_hoenn = head.is_hoenn || body.is_hoenn;
-    if (is_hoenn) {
-        debugger;
-    }
+        // Use other if same as head
+        const type2 = body.type2 == type1
+            ? body.type1
+            : body.type2;
 
-    return {
-        head_id: head.head_id,
-        body_id: body.body_id,
-        is_fused: true,
-        hp,
-        atk,
-        def,
-        spa,
-        spd,
-        spe,
-        bst,
-        type1,
-        type2,
-        abilities,
-        hidden_abilities,
-        is_hoenn
+        const abilities = head.abilities.slice();
+        for (const ab of body.abilities) {
+            if (!abilities.includes(ab)) {
+                abilities.push(ab);
+            }
+        }
+
+        const hidden_abilities = head.hidden_abilities.slice();
+        for (const ab of body.hidden_abilities) {
+            if (!hidden_abilities.includes(ab)) {
+                hidden_abilities.push(ab);
+            }
+        }
+
+        const is_hoenn = head.is_hoenn || body.is_hoenn;
+
+        return {
+            head_id: head.head_id,
+            body_id: body.body_id,
+            is_fused: true,
+            hp,
+            atk,
+            def,
+            spa,
+            spd,
+            spe,
+            bst,
+            type1,
+            type2,
+            abilities,
+            hidden_abilities,
+            is_hoenn
+        };
     };
-}
+})();
 
 function generate_fusions(game_data) {
     const unfused_pokemon = game_data.pokemon.slice();
@@ -619,7 +623,7 @@ async function main() {
     });
 
     // Don't feel like making UI for this so just gonna expose this function
-    window.load_names_from_save_file = async function(url, into_blacklist = false) {
+    window.load_names_from_save_file = async function (url, into_blacklist = false) {
         const downloaded_bytes = await (await fetch(url)).arrayBuffer();
         const save_data = marshal.load(downloaded_bytes, {
             hashSymbolKeysToString: true,
@@ -652,7 +656,7 @@ async function main() {
         apply_sorting_and_filtering().then(() => m.redraw());
     }
 
-    window.generate_random_party = function(party_size = 6) {
+    window.generate_random_party = function (party_size = 6) {
         let pokes = [];
         if (sorted_pokemon.length <= party_size) {
             pokes = sorted_pokemon;
