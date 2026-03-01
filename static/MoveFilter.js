@@ -58,34 +58,35 @@ export const MoveFilter = {
             this.longest_type_name = longest;
         }
 
-        const selected_move = Array.from(filter_state.move_filter)[0];
-        const selected_move_name = isNaN(selected_move) ? "" : game_data.moves[selected_move].name;
+        const selected_move_names = Array.from(filter_state.move_filter).sort((a, b) => a - b).map(move_id => game_data.moves[move_id].name).join(", ");
 
-        const type_options = [m("option", {key: "any", label: "Any type", value: null, selected: filter_state.move_filter_type === null})];
+        const type_options = [m("option", { key: "any", label: "Any type", value: null, selected: filter_state.move_filter_type === null })];
         for (const tp_name of standard_types) {
             const id = this.type_name_map[tp_name.toUpperCase()];
-            type_options.push(m("option", {key: tp_name, label: tp_name, value: id, selected: filter_state.move_filter_type === id}));
+            type_options.push(m("option", { key: tp_name, label: tp_name, value: id, selected: filter_state.move_filter_type === id }));
         }
 
         return m("div.move-filter", m("strong", "Filter by learnable moves"),
             m("datalist", { id: "moves-datalist" },
                 Object.values(game_data.moves)
-                    .map(move => m("option", { key: move.name, label: move.name, value: move.id }))),
+                    .map(move => m("option", { key: move.name, label: move.name, value: move.name.toLowerCase() }))),
             m(InputWidget, {
+                multiple: true,
                 list: "moves-datalist",
-                value: selected_move_name,
+                value: selected_move_names,
                 placeholder: "Search...",
                 set_value: v => {
-                    if (v && v in game_data.moves) {
-                        filter_state.move_filter.add(parseInt(v));
-                    } else {
-                        filter_state.move_filter.clear();
-                    }
+                    filter_state.move_filter.clear();
                 },
                 onchange: e => {
                     filter_state.move_filter.clear();
-                    if (e.target.value in game_data.moves) {
-                        filter_state.move_filter.add(parseInt(e.target.value));
+                    if (!e.target.value) return;
+                    const move_names = e.target.value.split(",");
+                    for (let move_name of move_names) {
+                        move_name = move_name.trim().toLowerCase();
+                        if (move_name in game_data.moves_by_name) {
+                            filter_state.move_filter.add(game_data.moves_by_name[move_name]);
+                        }
                     }
                 }
             }),
@@ -100,7 +101,8 @@ export const MoveFilter = {
                 onchange: e => {
                     filter_state.move_filter.clear();
                     for (const opt of e.target.selectedOptions) {
-                        filter_state.move_filter.add(parseInt(opt.value));
+                        const move_name = opt.value;
+                        filter_state.move_filter.add(game_data.moves_by_name[move_name]);
                     }
                 }
             }, Object.values(game_data.moves)
@@ -116,7 +118,7 @@ export const MoveFilter = {
                         const cat = category_names[move.category];
                         move.text = `${name}: ${pow}/${acc} ${tp} ${cat}`;
                     }
-                    return m("option", { label: move.text, value: move.id })
+                    return m("option", { selected: filter_state.move_filter.has(move.id), label: move.text, value: move.name.toLowerCase() })
                 })));
     }
 };

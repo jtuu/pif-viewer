@@ -369,7 +369,7 @@ function filter(filter_state) {
                 // Assume evolution level is 1 if current pokemon is the lowest evolution in its chain.
                 if (is_lowest) {
                     return 1 >= filter_state.evolution_level_range_filter_min &&
-                    1 <= filter_state.evolution_level_range_filter_max;
+                        1 <= filter_state.evolution_level_range_filter_max;
                 }
                 if (level_evos.length < 1) {
                     return true;
@@ -458,11 +458,11 @@ function filter(filter_state) {
                 }
             }
         }
-        
+
         const move_filter_passed = filter_state.move_filter.size === 0 ||
-            Array.from(filter_state.move_filter).some(move_id => preevos_and_self.some(poke_id => can_learn_move(poke_id, game_data.moves, move_id))) ||
+            Array.from(filter_state.move_filter).every(move_id => preevos_and_self.some(poke_id => can_learn_move(poke_id, game_data.moves, move_id))) ||
             expert_moves.intersection(filter_state.move_filter).size > 0 &&
-            get_expert_moves(poke, game_data.moves, poke_name_map, type_name_map, move_name_map).some(move_id => filter_state.move_filter.has(move_id));
+            (expert_moves => Array.from(filter_state.move_filter).every(move_id => expert_moves.includes(move_id)))(get_expert_moves(poke, game_data.moves, poke_name_map, type_name_map, move_name_map));
         if (!move_filter_passed) {
             return false;
         }

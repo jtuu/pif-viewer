@@ -413,6 +413,14 @@ async function download_files() {
         }
     }
 
+    // Create move name->id lookup table
+    game_data.moves_by_name = {};
+    for (const id of Object.keys(game_data.moves)) {
+        const move = game_data.moves[id];
+        const key = move.name.toLowerCase();
+        game_data.moves_by_name[key] = move.id;
+    }
+
     return { game_data, sprites_metadata };
 }
 
