@@ -8,7 +8,7 @@ function process_files {
     to_dir="../static/split_sprites"
     for f in "$@"; do
         head_dir=$(basename $(dirname "$f"))
-        [ -n "$var" ] && [ "$var" -eq "$var" ] 2>/dev/null
+        [ -n "$head_dir" ] && [ "$head_dir" -eq "$head_dir" ] 2>/dev/null
         dir_is_numeric=$?
         if [ $dir_is_numeric ]; then
             filename=$(basename "$f")
@@ -21,6 +21,7 @@ function process_files {
                     cp "$f" "$old_file"
                 fi
             else
+                mkdir -p "$to_dir/$head_dir"
                 # New file
                 echo "new     $f $old_file"
                 cp "$f" "$old_file"

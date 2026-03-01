@@ -5,6 +5,8 @@ set -euo pipefail
 pack_dir_path="$1"
 result_dir="../static"
 
+rm -r "output/split_sprites"
+
 find "$pack_dir_path/CustomBattlers" "$pack_dir_path/Other/BaseSprites" "$pack_dir_path/Other/Triples" -type f -name "*.png" -print0 \
     | parallel -0 --jobs 8 -n 1000 --no-run-if-empty 'magick mogrify -format png -filter point -resize 96x96 {}'
 
