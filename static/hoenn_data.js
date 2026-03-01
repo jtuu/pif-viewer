@@ -68,8 +68,15 @@ export const hoenn_data = {
         "563": "Huntail",
         "564": "Gorebyss",
         "565": "Relicanth",
+        "566": "Woobat",
+        "567": "Swoobat",
+        "568": "Tynamo",
+        "569": "Eelektrik",
+        "570": "Eelektross",
+        "571": "Skrelp",
+        "572": "Dragalge",
     },
-    pokemon: [
+    "pokemon": [
         {
             "type1": 17,
             "type2": 17,
@@ -396,26 +403,6 @@ export const hoenn_data = {
         },
         {
             "type1": 6,
-            "type2": 2,
-            "abilities": [
-                22
-            ],
-            "hidden_abilities": [
-                127
-            ],
-            "is_fused": false,
-            "hp": 70,
-            "atk": 60,
-            "def": 62,
-            "spa": 100,
-            "spd": 82,
-            "spe": 80,
-            "bst": 454,
-            "head_id": 519,
-            "body_id": 519
-        },
-        {
-            "type1": 6,
             "type2": 11,
             "abilities": [
                 33
@@ -433,6 +420,26 @@ export const hoenn_data = {
             "bst": 269,
             "head_id": 518,
             "body_id": 518
+        },
+        {
+            "type1": 6,
+            "type2": 2,
+            "abilities": [
+                22
+            ],
+            "hidden_abilities": [
+                127
+            ],
+            "is_fused": false,
+            "hp": 70,
+            "atk": 60,
+            "def": 62,
+            "spa": 100,
+            "spd": 82,
+            "spe": 80,
+            "bst": 454,
+            "head_id": 519,
+            "body_id": 519
         },
         {
             "type1": 0,
@@ -547,15 +554,15 @@ export const hoenn_data = {
                 147
             ],
             "is_fused": false,
-            "hp": 70,
-            "atk": 65,
-            "def": 65,
-            "spa": 55,
-            "spd": 55,
-            "spe": 90,
-            "bst": 400,
-            "head_id": 526,
-            "body_id": 526
+            "hp": 50,
+            "atk": 45,
+            "def": 45,
+            "spa": 35,
+            "spd": 35,
+            "spe": 50,
+            "bst": 260,
+            "head_id": 525,
+            "body_id": 525
         },
         {
             "type1": 0,
@@ -568,35 +575,15 @@ export const hoenn_data = {
                 147
             ],
             "is_fused": false,
-            "hp": 50,
-            "atk": 45,
-            "def": 45,
-            "spa": 35,
-            "spd": 35,
-            "spe": 50,
-            "bst": 260,
-            "head_id": 525,
-            "body_id": 525
-        },
-        {
-            "type1": 1,
-            "type2": 14,
-            "abilities": [
-                74
-            ],
-            "hidden_abilities": [
-                140
-            ],
-            "is_fused": false,
-            "hp": 60,
-            "atk": 60,
-            "def": 75,
-            "spa": 60,
-            "spd": 75,
-            "spe": 80,
-            "bst": 410,
-            "head_id": 528,
-            "body_id": 528
+            "hp": 70,
+            "atk": 65,
+            "def": 65,
+            "spa": 55,
+            "spd": 55,
+            "spe": 90,
+            "bst": 400,
+            "head_id": 526,
+            "body_id": 526
         },
         {
             "type1": 1,
@@ -619,6 +606,26 @@ export const hoenn_data = {
             "body_id": 527
         },
         {
+            "type1": 1,
+            "type2": 14,
+            "abilities": [
+                74
+            ],
+            "hidden_abilities": [
+                140
+            ],
+            "is_fused": false,
+            "hp": 60,
+            "atk": 60,
+            "def": 75,
+            "spa": 60,
+            "spd": 75,
+            "spe": 80,
+            "bst": 410,
+            "head_id": 528,
+            "body_id": 528
+        },
+        {
             "type1": 13,
             "type2": 13,
             "abilities": [
@@ -638,6 +645,27 @@ export const hoenn_data = {
             "bst": 295,
             "head_id": 529,
             "body_id": 529
+        },
+        {
+            "type1": 13,
+            "type2": 13,
+            "abilities": [
+                9,
+                31
+            ],
+            "hidden_abilities": [
+                58
+            ],
+            "is_fused": false,
+            "hp": 70,
+            "atk": 75,
+            "def": 60,
+            "spa": 105,
+            "spd": 60,
+            "spe": 105,
+            "bst": 475,
+            "head_id": 530,
+            "body_id": 530
         },
         {
             "type1": 13,
@@ -678,27 +706,6 @@ export const hoenn_data = {
             "bst": 405,
             "head_id": 532,
             "body_id": 532
-        },
-        {
-            "type1": 13,
-            "type2": 13,
-            "abilities": [
-                9,
-                31
-            ],
-            "hidden_abilities": [
-                58
-            ],
-            "is_fused": false,
-            "hp": 70,
-            "atk": 75,
-            "def": 60,
-            "spa": 105,
-            "spd": 60,
-            "spe": 105,
-            "bst": 475,
-            "head_id": 530,
-            "body_id": 530
         },
         {
             "type1": 6,
@@ -753,15 +760,15 @@ export const hoenn_data = {
                 82
             ],
             "is_fused": false,
-            "hp": 100,
-            "atk": 73,
-            "def": 83,
-            "spa": 73,
-            "spd": 83,
-            "spe": 55,
-            "bst": 467,
-            "head_id": 536,
-            "body_id": 536
+            "hp": 70,
+            "atk": 43,
+            "def": 53,
+            "spa": 43,
+            "spd": 53,
+            "spe": 40,
+            "bst": 302,
+            "head_id": 535,
+            "body_id": 535
         },
         {
             "type1": 3,
@@ -774,15 +781,15 @@ export const hoenn_data = {
                 82
             ],
             "is_fused": false,
-            "hp": 70,
-            "atk": 43,
-            "def": 53,
-            "spa": 43,
-            "spd": 53,
-            "spe": 40,
-            "bst": 302,
-            "head_id": 535,
-            "body_id": 535
+            "hp": 100,
+            "atk": 73,
+            "def": 83,
+            "spa": 73,
+            "spd": 83,
+            "spe": 55,
+            "bst": 467,
+            "head_id": 536,
+            "body_id": 536
         },
         {
             "type1": 10,
@@ -848,6 +855,27 @@ export const hoenn_data = {
             "body_id": 539
         },
         {
+            "type1": 14,
+            "type2": 14,
+            "abilities": [
+                47,
+                20
+            ],
+            "hidden_abilities": [
+                82
+            ],
+            "is_fused": false,
+            "hp": 80,
+            "atk": 45,
+            "def": 65,
+            "spa": 90,
+            "spd": 110,
+            "spe": 80,
+            "bst": 470,
+            "head_id": 540,
+            "body_id": 540
+        },
+        {
             "type1": 0,
             "type2": 0,
             "abilities": [
@@ -887,27 +915,6 @@ export const hoenn_data = {
             "bst": 458,
             "head_id": 542,
             "body_id": 542
-        },
-        {
-            "type1": 14,
-            "type2": 14,
-            "abilities": [
-                47,
-                20
-            ],
-            "hidden_abilities": [
-                82
-            ],
-            "is_fused": false,
-            "hp": 80,
-            "atk": 45,
-            "def": 65,
-            "spa": 90,
-            "spd": 110,
-            "spe": 80,
-            "bst": 470,
-            "head_id": 540,
-            "body_id": 540
         },
         {
             "type1": 3,
@@ -1122,24 +1129,6 @@ export const hoenn_data = {
             "body_id": 553
         },
         {
-            "type1": 15,
-            "type2": 15,
-            "abilities": [
-                59
-            ],
-            "hidden_abilities": [],
-            "is_fused": false,
-            "hp": 70,
-            "atk": 70,
-            "def": 70,
-            "spa": 70,
-            "spd": 70,
-            "spe": 70,
-            "bst": 420,
-            "head_id": 555,
-            "body_id": 555
-        },
-        {
             "type1": 11,
             "type2": 11,
             "abilities": [
@@ -1158,22 +1147,22 @@ export const hoenn_data = {
             "body_id": 554
         },
         {
-            "type1": 14,
-            "type2": 14,
+            "type1": 15,
+            "type2": 15,
             "abilities": [
-                26
+                59
             ],
             "hidden_abilities": [],
             "is_fused": false,
-            "hp": 45,
-            "atk": 30,
-            "def": 50,
-            "spa": 65,
-            "spd": 50,
-            "spe": 45,
-            "bst": 285,
-            "head_id": 557,
-            "body_id": 557
+            "hp": 70,
+            "atk": 70,
+            "def": 70,
+            "spa": 70,
+            "spd": 70,
+            "spe": 70,
+            "bst": 420,
+            "head_id": 555,
+            "body_id": 555
         },
         {
             "type1": 12,
@@ -1204,6 +1193,24 @@ export const hoenn_data = {
             ],
             "hidden_abilities": [],
             "is_fused": false,
+            "hp": 45,
+            "atk": 30,
+            "def": 50,
+            "spa": 65,
+            "spd": 50,
+            "spe": 45,
+            "bst": 285,
+            "head_id": 557,
+            "body_id": 557
+        },
+        {
+            "type1": 14,
+            "type2": 14,
+            "abilities": [
+                26
+            ],
+            "hidden_abilities": [],
+            "is_fused": false,
             "hp": 75,
             "atk": 50,
             "def": 80,
@@ -1225,15 +1232,15 @@ export const hoenn_data = {
                 12
             ],
             "is_fused": false,
-            "hp": 90,
-            "atk": 60,
-            "def": 70,
-            "spa": 75,
-            "spd": 70,
-            "spe": 45,
-            "bst": 410,
-            "head_id": 560,
-            "body_id": 560
+            "hp": 70,
+            "atk": 40,
+            "def": 50,
+            "spa": 55,
+            "spd": 50,
+            "spe": 25,
+            "bst": 290,
+            "head_id": 559,
+            "body_id": 559
         },
         {
             "type1": 15,
@@ -1246,15 +1253,15 @@ export const hoenn_data = {
                 12
             ],
             "is_fused": false,
-            "hp": 70,
-            "atk": 40,
-            "def": 50,
-            "spa": 55,
-            "spd": 50,
-            "spe": 25,
-            "bst": 290,
-            "head_id": 559,
-            "body_id": 559
+            "hp": 90,
+            "atk": 60,
+            "def": 70,
+            "spa": 75,
+            "spd": 70,
+            "spe": 45,
+            "bst": 410,
+            "head_id": 560,
+            "body_id": 560
         },
         {
             "type1": 15,
@@ -1357,61 +1364,147 @@ export const hoenn_data = {
             "bst": 485,
             "head_id": 565,
             "body_id": 565
+        },
+        {
+            "type1": 14,
+            "type2": 2,
+            "abilities": [
+                109,
+                103
+            ],
+            "hidden_abilities": [
+                86
+            ],
+            "is_fused": false,
+            "hp": 65,
+            "atk": 45,
+            "def": 43,
+            "spa": 55,
+            "spd": 43,
+            "spe": 72,
+            "bst": 323,
+            "head_id": 566,
+            "body_id": 566
+        },
+        {
+            "type1": 14,
+            "type2": 2,
+            "abilities": [
+                109,
+                103
+            ],
+            "hidden_abilities": [
+                86
+            ],
+            "is_fused": false,
+            "hp": 67,
+            "atk": 57,
+            "def": 55,
+            "spa": 77,
+            "spd": 55,
+            "spe": 114,
+            "bst": 425,
+            "head_id": 567,
+            "body_id": 567
+        },
+        {
+            "type1": 13,
+            "type2": 13,
+            "abilities": [
+                26
+            ],
+            "hidden_abilities": [],
+            "is_fused": false,
+            "hp": 35,
+            "atk": 55,
+            "def": 40,
+            "spa": 45,
+            "spd": 40,
+            "spe": 60,
+            "bst": 275,
+            "head_id": 568,
+            "body_id": 568
+        },
+        {
+            "type1": 13,
+            "type2": 13,
+            "abilities": [
+                26
+            ],
+            "hidden_abilities": [],
+            "is_fused": false,
+            "hp": 65,
+            "atk": 85,
+            "def": 70,
+            "spa": 75,
+            "spd": 70,
+            "spe": 40,
+            "bst": 405,
+            "head_id": 569,
+            "body_id": 569
+        },
+        {
+            "type1": 13,
+            "type2": 13,
+            "abilities": [
+                26
+            ],
+            "hidden_abilities": [],
+            "is_fused": false,
+            "hp": 85,
+            "atk": 115,
+            "def": 80,
+            "spa": 105,
+            "spd": 80,
+            "spe": 50,
+            "bst": 515,
+            "head_id": 570,
+            "body_id": 570
+        },
+        {
+            "type1": 3,
+            "type2": 11,
+            "abilities": [
+                38,
+                143
+            ],
+            "hidden_abilities": [
+                91
+            ],
+            "is_fused": false,
+            "hp": 50,
+            "atk": 60,
+            "def": 60,
+            "spa": 60,
+            "spd": 60,
+            "spe": 30,
+            "bst": 320,
+            "head_id": 571,
+            "body_id": 571
+        },
+        {
+            "type1": 3,
+            "type2": 16,
+            "abilities": [
+                38,
+                143
+            ],
+            "hidden_abilities": [
+                91
+            ],
+            "is_fused": false,
+            "hp": 65,
+            "atk": 75,
+            "def": 90,
+            "spa": 97,
+            "spd": 123,
+            "spe": 44,
+            "bst": 494,
+            "head_id": 572,
+            "body_id": 572
         }
     ],
     "evolutions": {
-        "511": [
-            {
-                "is_preevo": false,
-                "evo_id": 512,
-                "kind": {
-                    "Level": 14
-                }
-            }
-        ],
-        "512": [
-            {
-                "is_preevo": true,
-                "evo_id": 511,
-                "kind": {
-                    "Level": 14
-                }
-            },
-            {
-                "is_preevo": false,
-                "evo_id": 513,
-                "kind": {
-                    "Item": "leaf-stone"
-                }
-            }
-        ],
-        "513": [
-            {
-                "is_preevo": true,
-                "evo_id": 512,
-                "kind": {
-                    "Item": "leaf-stone"
-                }
-            }
-        ],
-        "514": [
-            {
-                "is_preevo": false,
-                "evo_id": 515,
-                "kind": {
-                    "Level": 22
-                }
-            }
-        ],
-        "515": [
-            {
-                "is_preevo": true,
-                "evo_id": 514,
-                "kind": {
-                    "Level": 22
-                }
-            }
-        ],
         "502": [
             {
                 "is_preevo": false,
@@ -1427,6 +1520,24 @@ export const hoenn_data = {
                 "evo_id": 502,
                 "kind": {
                     "Level": 18
+                }
+            }
+        ],
+        "504": [
+            {
+                "is_preevo": false,
+                "evo_id": 505,
+                "kind": {
+                    "Level": 20
+                }
+            }
+        ],
+        "505": [
+            {
+                "is_preevo": true,
+                "evo_id": 504,
+                "kind": {
+                    "Level": 20
                 }
             }
         ],
@@ -1496,37 +1607,53 @@ export const hoenn_data = {
                 }
             }
         ],
-        "504": [
+        "511": [
             {
                 "is_preevo": false,
-                "evo_id": 505,
+                "evo_id": 512,
                 "kind": {
-                    "Level": 20
+                    "Level": 14
                 }
             }
         ],
-        "505": [
+        "512": [
             {
                 "is_preevo": true,
-                "evo_id": 504,
+                "evo_id": 511,
                 "kind": {
-                    "Level": 20
+                    "Level": 14
+                }
+            },
+            {
+                "is_preevo": false,
+                "evo_id": 513,
+                "kind": {
+                    "Item": "leaf-stone"
                 }
             }
         ],
-        "518": [
+        "513": [
+            {
+                "is_preevo": true,
+                "evo_id": 512,
+                "kind": {
+                    "Item": "leaf-stone"
+                }
+            }
+        ],
+        "514": [
             {
                 "is_preevo": false,
-                "evo_id": 519,
+                "evo_id": 515,
                 "kind": {
                     "Level": 22
                 }
             }
         ],
-        "519": [
+        "515": [
             {
                 "is_preevo": true,
-                "evo_id": 518,
+                "evo_id": 514,
                 "kind": {
                     "Level": 22
                 }
@@ -1547,6 +1674,24 @@ export const hoenn_data = {
                 "evo_id": 516,
                 "kind": {
                     "Level": 25
+                }
+            }
+        ],
+        "518": [
+            {
+                "is_preevo": false,
+                "evo_id": 519,
+                "kind": {
+                    "Level": 22
+                }
+            }
+        ],
+        "519": [
+            {
+                "is_preevo": true,
+                "evo_id": 518,
+                "kind": {
+                    "Level": 22
                 }
             }
         ],
@@ -1584,24 +1729,6 @@ export const hoenn_data = {
                 }
             }
         ],
-        "557": [
-            {
-                "is_preevo": false,
-                "evo_id": 558,
-                "kind": {
-                    "Happiness": 220
-                }
-            }
-        ],
-        "558": [
-            {
-                "is_preevo": true,
-                "evo_id": 557,
-                "kind": {
-                    "Happiness": 220
-                }
-            }
-        ],
         "523": [
             {
                 "is_preevo": false,
@@ -1620,24 +1747,6 @@ export const hoenn_data = {
                 }
             }
         ],
-        "527": [
-            {
-                "is_preevo": false,
-                "evo_id": 528,
-                "kind": {
-                    "Level": 37
-                }
-            }
-        ],
-        "528": [
-            {
-                "is_preevo": true,
-                "evo_id": 527,
-                "kind": {
-                    "Level": 37
-                }
-            }
-        ],
         "525": [
             {
                 "is_preevo": false,
@@ -1653,6 +1762,24 @@ export const hoenn_data = {
                 "evo_id": 525,
                 "kind": {
                     "Item": "moon-stone"
+                }
+            }
+        ],
+        "527": [
+            {
+                "is_preevo": false,
+                "evo_id": 528,
+                "kind": {
+                    "Level": 37
+                }
+            }
+        ],
+        "528": [
+            {
+                "is_preevo": true,
+                "evo_id": 527,
+                "kind": {
+                    "Level": 37
                 }
             }
         ],
@@ -1782,6 +1909,24 @@ export const hoenn_data = {
                 }
             }
         ],
+        "557": [
+            {
+                "is_preevo": false,
+                "evo_id": 558,
+                "kind": {
+                    "Happiness": 220
+                }
+            }
+        ],
+        "558": [
+            {
+                "is_preevo": true,
+                "evo_id": 557,
+                "kind": {
+                    "Happiness": 220
+                }
+            }
+        ],
         "559": [
             {
                 "is_preevo": false,
@@ -1847,6 +1992,76 @@ export const hoenn_data = {
                 "evo_id": 562,
                 "kind": {
                     "Trade": true
+                }
+            }
+        ],
+        "566": [
+            {
+                "is_preevo": false,
+                "evo_id": 567,
+                "kind": {
+                    "Happiness": 160
+                }
+            }
+        ],
+        "567": [
+            {
+                "is_preevo": true,
+                "evo_id": 566,
+                "kind": {
+                    "Happiness": 160
+                }
+            }
+        ],
+        "568": [
+            {
+                "is_preevo": false,
+                "evo_id": 569,
+                "kind": {
+                    "Level": 39
+                }
+            }
+        ],
+        "569": [
+            {
+                "is_preevo": true,
+                "evo_id": 568,
+                "kind": {
+                    "Level": 39
+                }
+            },
+            {
+                "is_preevo": false,
+                "evo_id": 570,
+                "kind": {
+                    "Item": "thunder-stone"
+                }
+            }
+        ],
+        "570": [
+            {
+                "is_preevo": true,
+                "evo_id": 569,
+                "kind": {
+                    "Item": "thunder-stone"
+                }
+            }
+        ],
+        "571": [
+            {
+                "is_preevo": false,
+                "evo_id": 572,
+                "kind": {
+                    "Level": 48
+                }
+            }
+        ],
+        "572": [
+            {
+                "is_preevo": true,
+                "evo_id": 571,
+                "kind": {
+                    "Level": 48
                 }
             }
         ],
