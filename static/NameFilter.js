@@ -19,12 +19,13 @@ const legendaries = [
     "Cresselia", "Articuno",
     "Zapdos", "Moltres",
     "Regirock", "Registeel",
-    "Regice"
-];
-
-const other_ubers = [
+    "Regice",
     "Meloetta-Aria",
     "Meloetta-Pirouette",
+    "Diancie",
+];
+
+const other_strong = [
     "Goodra",
     "Metagross",
     "Garchomp",
@@ -32,13 +33,13 @@ const other_ubers = [
     "Salamence",
     "Tyranitar",
     "Hydreigon",
-    "Diancie",
-    "Kommo-o"
-];
-
-const other_strong = [
+    "Kommo-o",
     "Slaking",
-    "Blissey"
+    "Blissey",
+    "Chansey",
+    "Aegislash",
+    "Volcarona",
+    "Noivern"
 ];
 
 export function add_name_filter(game_data, unfused_names, id_, add_list, remove_list, add_all_evolutions, move_out_of_list = true) {
@@ -206,11 +207,8 @@ export const NameFilter = {
                     onclick: e => add_to_blacklist(names_to_ids(legendaries))
                 }, "Legendaries"),
                 m("button", {
-                    onclick: e => add_to_blacklist(names_to_ids(other_ubers))
-                }, "Ubers"),
-                m("button", {
                     onclick: e => add_to_blacklist(names_to_ids(other_strong))
-                }, "Strong")),
+                }, "Other strong")),
             m("div", m("label", { title: "Both halves of the fusion must exist in whitelist" },
                 m("input", {
                     type: "checkbox",
