@@ -421,6 +421,13 @@ async function download_files() {
         game_data.moves_by_name[key] = move.id;
     }
 
+    // Create pokemon name->id lookup table
+    game_data.pokemon_by_name = {};
+    for (const id of Object.keys(game_data.pokemon_names)) {
+        const name = game_data.pokemon_names[id].toLowerCase();
+        game_data.pokemon_by_name[name] = parseInt(id);
+    }
+
     return { game_data, sprites_metadata };
 }
 

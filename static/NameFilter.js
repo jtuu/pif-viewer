@@ -91,9 +91,9 @@ export const NameFilter = {
             if (set.size === 0) {
                 return m("option.empty-option", { label: "(Empty)", disabled: true });
             }
-            return Array.from(set).map(id => m("option", { key: id, label: unfused_names[id], value: id, selected: filter_state.highlighted_names.has(id) }));
+            return Array.from(set).map(id => m("option", { key: id, label: unfused_names[id], value: unfused_names[id].toLowerCase(), selected: filter_state.highlighted_names.has(id) }));
         };
-        const names_to_ids = names => names.map(name => parseInt(Object.entries(unfused_names).find(([k, v]) => v === name)[0]));
+        const names_to_ids = names => names.map(name => game_data.pokemon_by_name[name.toLowerCase()]);
         return m("div.name-filter",
             m("div", m("label", { for: "name-filter-selection" }, m("strong", "Filter by name"))),
             m("div", m(InputWidget, {
@@ -107,16 +107,20 @@ export const NameFilter = {
                     onclick: e => {
                         const input_el = document.querySelector("#name-filter-selection");
                         if (input_el.value) {
-                            if (add_to_blacklist(parseInt(input_el.value))) {
+                            const poke_name = input_el.value.toLowerCase();
+                            const poke_id = game_data.pokemon_by_name[poke_name];
+                            if (add_to_blacklist(poke_id)) {
                                 input_el.value = "";
+                                filter_state.highlighted_names.delete(poke_id);
                             }
                         } else {
                             const list_el = document.querySelector("#name-filter-list");
                             const selected = [];
-                            for (const opt of list_el.options) {
-                                if (opt.selected) {
-                                    selected.push(parseInt(opt.value));
-                                }
+                            for (const opt of list_el.selectedOptions) {
+                                const poke_name = opt.value.toLowerCase();
+                                const poke_id = game_data.pokemon_by_name[poke_name];
+                                selected.push(poke_id);
+                                filter_state.highlighted_names.delete(poke_id);
                             }
                             add_to_blacklist(selected);
                         }
@@ -126,16 +130,18 @@ export const NameFilter = {
                     onclick: e => {
                         const input_el = document.querySelector("#name-filter-selection");
                         if (input_el.value) {
-                            if (add_to_whitelist(parseInt(input_el.value))) {
+                            const poke_name = input_el.value.toLowerCase();
+                            const poke_id = game_data.pokemon_by_name[poke_name];
+                            if (add_to_whitelist(poke_id)) {
                                 input_el.value = "";
                             }
                         } else {
                             const list_el = document.querySelector("#name-filter-list");
                             const selected = [];
-                            for (const opt of list_el.options) {
-                                if (opt.selected) {
-                                    selected.push(parseInt(opt.value));
-                                }
+                            for (const opt of list_el.selectedOptions) {
+                                const poke_name = opt.value.toLowerCase();
+                                const poke_id = game_data.pokemon_by_name[poke_name];
+                                selected.push(poke_id);
                             }
                             add_to_whitelist(selected);
                         }
@@ -147,18 +153,20 @@ export const NameFilter = {
                         let any_selected = false;
                         for (const opt of list_el.options) {
                             if (opt.selected) {
-                                const v = parseInt(opt.value);
-                                filter_state.name_blacklist.delete(v);
-                                filter_state.name_whitelist.delete(v);
-                                filter_state.highlighted_names.delete(v);
+                                const poke_name = opt.value.toLowerCase();
+                                const poke_id = game_data.pokemon_by_name[poke_name];
+                                filter_state.name_blacklist.delete(poke_id);
+                                filter_state.name_whitelist.delete(poke_id);
+                                filter_state.highlighted_names.delete(poke_id);
                                 any_selected = true;
                             }
                         }
                         if (!any_selected) {
                             const input_el = document.querySelector("#name-filter-selection");
-                            const v = parseInt(input_el.value);
-                            filter_state.name_blacklist.delete(v);
-                            filter_state.name_whitelist.delete(v);
+                            const poke_name = input_el.value.toLowerCase();
+                            const poke_id = game_data.pokemon_by_name[poke_name];
+                            filter_state.name_blacklist.delete(poke_id);
+                            filter_state.name_whitelist.delete(poke_id);
                             input_el.value = "";
                         }
                     }
@@ -178,7 +186,7 @@ export const NameFilter = {
                         filter_state.name_filter_add_all_evolutions = e.target.checked;
                     }
                 }), "Add all evolutions")),
-            m("datalist", { id: "poke-names" }, Object.entries(unfused_names).map(([id, name]) => m("option", { key: name, value: id, label: name }))),
+            m("datalist", { id: "poke-names" }, Object.values(unfused_names).map((name => m("option", { key: name, value: name.toLowerCase(), label: name })))),
             m("select", {
                 id: "name-filter-list",
                 name: "name-filter-list",
@@ -186,7 +194,8 @@ export const NameFilter = {
                 onchange: e => {
                     filter_state.highlighted_names.clear();
                     for (const opt of e.target.selectedOptions) {
-                        filter_state.highlighted_names.add(parseInt(opt.value));
+                        const poke_name = opt.value;
+                        filter_state.highlighted_names.add(game_data.pokemon_by_name[poke_name]);
                     }
                 }
             },
