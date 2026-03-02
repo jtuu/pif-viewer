@@ -23,7 +23,7 @@ export const StatFilter = {
                             type: "range",
                             name: "min_" + stat_name,
                             min: 0,
-                            max: 255,
+                            max: stat_name === "BST" ? 1000 : 255,
                             value: filter_state.stat_minimum_filter[stat_name],
                             oninput: e => {
                                 filter_state.stat_minimum_filter[stat_name] = e.target.value;

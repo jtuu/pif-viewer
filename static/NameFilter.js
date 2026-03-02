@@ -88,9 +88,9 @@ export const NameFilter = {
         const { filter_state, game_data, unfused_names } = vnode.attrs;
         const add_to_blacklist = names => add_name_filter(game_data, unfused_names, names, filter_state.name_blacklist, filter_state.name_whitelist, filter_state.name_filter_add_all_evolutions);
         const add_to_whitelist = names => add_name_filter(game_data, unfused_names, names, filter_state.name_whitelist, filter_state.name_blacklist, filter_state.name_filter_add_all_evolutions);
-        const make_optgroup = set => {
+        const make_optgroup = (set, is_white) => {
             if (set.size === 0) {
-                return m("option.empty-option", { label: "(Empty)", disabled: true });
+                return m("option.empty-option", { key: is_white ? -1 : -2, label: "(Empty)", disabled: true });
             }
             return Array.from(set).map(id => m("option", { key: id, label: unfused_names[id], value: unfused_names[id].toLowerCase(), selected: filter_state.highlighted_names.has(id) }));
         };

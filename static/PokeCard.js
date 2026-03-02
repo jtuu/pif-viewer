@@ -1,12 +1,12 @@
-export function poke_key(poke) {
-    if (!Object.hasOwn(poke, "mithril_key")) {
+function poke_key(poke) {
+    if (!Object.hasOwn(poke, "poke_key")) {
         if (poke.is_fused) {
-            poke.mithril_key = `${poke.head_id}.${poke.body_id}`;
+            poke.poke_key = `${poke.head_id}.${poke.body_id}`;
         } else {
-            poke.mithril_key = `${poke.head_id}`;
+            poke.poke_key = `${poke.head_id}`;
         }
     }
-    return poke.mithril_key;
+    return poke.poke_key;
 }
 
 function sprite_url(poke, alt = "main") {
@@ -40,9 +40,13 @@ const all_alt_names = (() => {
     return alt_names;
 })();
 
+export function get_index_of_alt_name(alt) {
+    return all_alt_names.indexOf(alt) + 1;
+}
+
 export const PokeCard = {
     view(vnode) {
-        const { poke, game_data, sprites_metadata, filter_state } = vnode.attrs;
+        const { poke, head_name, body_name, poke_type_names, sprites_metadata, changed_sprites } = vnode.attrs;
 
         const key = poke_key(poke);
         const sprites_info = sprites_metadata.sprites[key] || {
@@ -54,7 +58,7 @@ export const PokeCard = {
             // From alt name to vec of artists
             alt_artists: []
         };
-        const selected_sprite_idx = Object.hasOwn(poke, "selected_sprite_idx") ? poke.selected_sprite_idx : 0;
+        const selected_sprite_idx = Object.hasOwn(changed_sprites, poke.mithril_key) ? changed_sprites[poke.mithril_key] : 0;
         // Always add main sprite even if it doesn't exist
         const sprite_count = sprites_info.alt_count + 1;
         const sprite_names = new Array(sprite_count);
@@ -62,11 +66,6 @@ export const PokeCard = {
         for (let i = 0; i < sprites_info.alt_count; i++) {
             sprite_names[i + 1] = all_alt_names[i];
         }
-
-        const poke_type_names = poke.types.map(id => game_data.types[id].name);
-
-        const head_name = game_data.pokemon_names[poke.head_id];
-        const body_name = game_data.pokemon_names[poke.body_id];
 
         const poke_name = poke.is_fused
             ? head_name + "/" + body_name
@@ -100,18 +99,18 @@ export const PokeCard = {
                         ? [m("button", {
                             onclick: e => {
                                 if (selected_sprite_idx > 0) {
-                                    poke.selected_sprite_idx = selected_sprite_idx - 1;
+                                    changed_sprites[poke.mithril_key] = selected_sprite_idx - 1;
                                 } else {
-                                    poke.selected_sprite_idx = sprite_names.length - 1;
+                                    changed_sprites[poke.mithril_key] = sprite_names.length - 1;
                                 }
                             }
                         }, "←"),
                         m("button", {
                             onclick: e => {
                                 if (selected_sprite_idx < sprite_names.length - 1) {
-                                    poke.selected_sprite_idx = selected_sprite_idx + 1;
+                                    changed_sprites[poke.mithril_key] = selected_sprite_idx + 1;
                                 } else {
-                                    poke.selected_sprite_idx = 0;
+                                    changed_sprites[poke.mithril_key] = 0;
                                 }
                             }
                         }, "→")]

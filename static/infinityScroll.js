@@ -4,7 +4,7 @@ function runRequest(vnode) {
   }
   vnode.state.loading = true
 
-  vnode.attrs.pageRequest(vnode.state.page, vnode.state.pageRequestParam).then((result) => {
+  vnode.attrs.pageRequest(vnode.state.page, result => {
     vnode.state.page = vnode.state.page + 1
     vnode.state.scrollElements = vnode.state.scrollElements.concat(result)
     vnode.state.loading = false
@@ -28,7 +28,7 @@ const Sentinel = () => ({
 
 const InfinityScroll = () => ({
   oninit(vnode) {
-    vnode.state.sentinel = m(Sentinel, {...vnode.attrs, get_io: () => vnode.state.io});
+    vnode.state.sentinel = m(Sentinel, {...vnode.attrs, key: "sentinel", get_io: () => vnode.state.io});
     vnode.state.scrollElements = []
     vnode.state.page = 0
     vnode.state.processPageData = (content) => { content.map((el) => el) }
@@ -55,7 +55,7 @@ const InfinityScroll = () => ({
     }, options)
   },
   
-  onupdate(vnode) {
+  onbeforeupdate(vnode) {
     if(vnode.attrs.pageRequestParam != undefined || vnode.state.pageRequestParam != undefined) {
       if(Object.entries(vnode.state.pageRequestParam).toString() != Object.entries(vnode.attrs.pageRequestParam).toString()) {
         vnode.state.pageRequestParam = vnode.attrs.pageRequestParam;
@@ -63,14 +63,16 @@ const InfinityScroll = () => ({
         vnode.state.page = 0;
         vnode.state.loadNext = true;
         runRequest(vnode);
-        m.redraw();
+        return true;
       }
     }
+    return false;
   },
   view(vnode) {
+    const items = vnode.state.processPageData(vnode.state.scrollElements);
     return [
-      vnode.state.processPageData(vnode.state.scrollElements),
-      vnode.state.loadNext ? vnode.state.sentinel : []
+      ...items,
+      vnode.state.loadNext ? vnode.state.sentinel : m.fragment({key: "terminator"})
     ]
   }
 })
