@@ -244,7 +244,8 @@ function filter(filter_state) {
                 return false;
             }
 
-            const name_blacklist_passed = !(filter_state.name_blacklist.has(poke.head_id) || filter_state.name_blacklist.has(poke.body_id));
+            const name_blacklist_passed = filter_state.name_blacklist_half_only ||
+                !(filter_state.name_blacklist.has(poke.head_id) || filter_state.name_blacklist.has(poke.body_id));
             if (!name_blacklist_passed) {
                 return false;
             }
