@@ -12,7 +12,8 @@ import { hoenn_data } from "./hoenn_data.js";
 import { DebugFilter } from "./DebugFilter.js";
 import { TRIPLE_FUSION_ID_START, TRIPLE_FUSIONS_HARDCODED_DATA, generate_fusions } from "./fusion_utils.js"
 import { init_filter_workers } from "./worker_interface.js";
-import { apply_filter, default_filter_state, load_state_from_local_storage } from "./filter_state.js";
+import { apply_filter, default_filter_state, load_state_from_local_storage, save_state_to_local_storage } from "./filter_state.js";
+import { InfiniteScroll } from "./InfiniteScroll.js"
 
 function preprocess_game_data(game_data, sprites_metadata) {
     // Add hoenn data
@@ -125,146 +126,177 @@ async function download_files() {
     return preprocess_game_data(game_data, sprites_metadata);
 }
 
+const App = (() => {
+    const filter_state = default_filter_state();
+    return {
+        gallery_fragment_size: 0,
+        is_loading: true,
+        gallery_has_more_pages: true,
+        items_in_current_gallery_pages: [],
+        filtered_and_sorted_pokemon_indices: [],
+        filter_state: filter_state,
+        filter_state_hash: load_state_from_local_storage(filter_state),
+        game_data: {
+            abilities: {},
+            pokemon_names: {},
+            types: {},
+            pokemon: []
+        },
+        sprites_metadata: {},
+        filter_workers: [],
+        changed_sprites: {},
+
+        reset_filter_state() {
+            Object.assign(this.filter_state, default_filter_state());
+        },
+        async apply_sorting_and_filtering() {
+            if (this.is_loading) {
+                return;
+            }
+            const result = await apply_filter(this.filter_state, this.filter_workers, this.game_data);
+            this.set_gallery(result);
+        },
+        set_gallery(pokemon_indices) {
+            this.items_in_current_gallery_pages = [];
+            this.filtered_and_sorted_pokemon_indices = pokemon_indices;
+            this.load_next_page();
+        },
+        load_next_page() {
+            const slice_start = this.items_in_current_gallery_pages.length;
+            const slice_end = slice_start + this.gallery_fragment_size;
+            const page_items = this.filtered_and_sorted_pokemon_indices.slice(slice_start, slice_end);
+            if (page_items.length > 0) {
+                this.items_in_current_gallery_pages.push(...page_items);
+            }
+            this.gallery_has_more_pages = this.items_in_current_gallery_pages.length < this.filtered_and_sorted_pokemon_indices.length;
+            m.redraw();
+        },
+    };
+})();
+
 async function main() {
-    // Scroll stuff
-    const card_width = 192 + 10 * 2 + 10 * 2;
-    const card_height = 241;
-    let gallery_fragment_size;
+    // Set number of items to load when scrolling based on window size
     const on_window_resize = () => {
+        const card_width = 192 + 10 * 2 + 10 * 2;
+        const card_height = 241;
         const cards_per_row = Math.floor(window.innerWidth / card_width);
-        gallery_fragment_size = cards_per_row * Math.floor(window.innerHeight / card_height);
+        App.gallery_fragment_size = cards_per_row * Math.floor(window.innerHeight / card_height);
         m.redraw();
     };
-    on_window_resize();
+    on_window_resize(); // Call once at start
     window.onresize = on_window_resize;
 
-    let is_loading = true;
-    const apply_sorting_and_filtering = async () => {
-        if (is_loading) {
-            return;
-        }
-        const result = await apply_filter(filter_state, filter_workers, game_data);
-        // Replace all array elements with new result
-        sorted_pokemon.length = result.length;
-        for (let i = 0; i < result.length; i++) {
-            sorted_pokemon[i] = result[i];
-        }
-    };
-
-    const game_data = {
-        abilities: {},
-        pokemon_names: {},
-        types: {},
-        pokemon: []
-    };
-    const sprites_metadata = {};
-    const filter_workers = [];
     download_files().then(files => {
-        Object.assign(game_data, files.game_data);
-        Object.assign(sprites_metadata, files.sprites_metadata);
+        Object.assign(App.game_data, files.game_data);
+        Object.assign(App.sprites_metadata, files.sprites_metadata);
 
-        const workers = init_filter_workers(navigator.hardwareConcurrency, game_data, sprites_metadata);
+        const workers = init_filter_workers(navigator.hardwareConcurrency, App.game_data, App.sprites_metadata);
         for (const worker of workers) {
-            filter_workers.push(worker);
+            App.filter_workers.push(worker);
         }
 
-        is_loading = false;
+        App.is_loading = false;
 
-        apply_sorting_and_filtering().then(() => m.redraw());
+        App.apply_sorting_and_filtering().then(() => m.redraw());
     });
 
-    const sorted_pokemon = [];
-    const filter_state = default_filter_state();
-
-    // State storage
-    let inf_scroll_cache_hash;
-    const reset_scroll_cache = () => {
-        const session_settings = filter_state.session_settings;
-        filter_state.session_settings = {};
-        const serialized_without_session = JSON.stringify(filter_state, (k, v) => {
-            if (v instanceof Set) {
-                return Array.from(v);
-            }
-            return v;
-        });
-        const serialized_session = JSON.stringify(session_settings);
-        filter_state.session_settings = session_settings;
-        // Don't save session settings to disk but include them in scroll cache
-        inf_scroll_cache_hash = btoa(serialized_without_session + serialized_session);
-        localStorage.filter_state = btoa(serialized_without_session);
-    };
-
-    load_state_from_local_storage(filter_state);
-    apply_sorting_and_filtering();
-    reset_scroll_cache();
-
-    let latest_loaded_page = 0;
-    const app = m.mount(document.body, {
+    m.mount(document.body, {
+        oninit() {
+            App.load_next_page();
+        },
         onupdate() {
-            const old_state = inf_scroll_cache_hash;
-            reset_scroll_cache();
-            if (old_state !== inf_scroll_cache_hash) {
-                apply_sorting_and_filtering().then(() => m.redraw());
+            const old_state = App.filter_state_hash;
+            App.filter_state_hash = save_state_to_local_storage(App.filter_state);
+            if (old_state !== App.filter_state_hash) {
+                App.apply_sorting_and_filtering().then(() => m.redraw());
             }
         },
         view() {
-            return is_loading ? m("div.loading", "Loading...") : [
+            return App.is_loading ? m("div.loading", "Loading...") : [
                 m("div", m(ConfirmingButton, {
                     label: "🗑️ Clear all filters",
                     confirm_label: "Confirm?",
                     onconfirm: e => {
-                        Object.assign(filter_state, default_filter_state());
+                        App.reset_filter_state();
                     }
                 })),
                 // Controls
                 m("div.controls",
-                    m(StatFilter, { filter_state }),
-                    m(NameFilter, { filter_state, game_data, unfused_names: game_data.pokemon_names }),
-                    m(TypeFilter, { filter_state, game_data }),
-                    m(AbilityFilter, { filter_state, game_data, sorted_pokemon }),
-                    m(ResistanceFilter, { filter_state }),
-                    m(EvolutionFilter, { filter_state, game_data }),
-                    m(SpriteFilter, { filter_state }),
-                    m(MoveFilter, { game_data, filter_state }),
-                    filter_state.debug_filter_url ? m(DebugFilter, { game_data, filter_state, sprites_metadata, filter_workers, apply_sorting_and_filtering, reset_scroll_cache }) : null),
+                    m(StatFilter,
+                        {
+                            filter_state: App.filter_state
+                        }),
+                    m(NameFilter,
+                        {
+                            filter_state: App.filter_state,
+                            game_data: App.game_data,
+                            unfused_names: App.game_data.pokemon_names
+                        }),
+                    m(TypeFilter,
+                        {
+                            filter_state: App.filter_state,
+                            game_data: App.game_data
+                        }),
+                    m(AbilityFilter,
+                        {
+                            filter_state: App.filter_state,
+                            game_data: App.game_data,
+                            sorted_pokemon: App.filtered_and_sorted_pokemon_indices
+                        }),
+                    m(ResistanceFilter,
+                        {
+                            filter_state: App.filter_state
+                        }),
+                    m(EvolutionFilter,
+                        {
+                            filter_state: App.filter_state,
+                            game_data: App.game_data
+                        }),
+                    m(SpriteFilter,
+                        {
+                            filter_state: App.filter_state
+                        }),
+                    m(MoveFilter,
+                        {
+                            filter_state: App.filter_state,
+                            game_data: App.game_data
+                        }),
+                    App.filter_state.debug_filter_url
+                        ? m(DebugFilter, {
+                            filter_state: App.filter_state,
+                            game_data: App.game_data,
+                            sprites_metadata: App.sprites_metadata,
+                            changed_sprites: App.changed_sprites,
+                            filter_workers: App.filter_workers,
+                            apply_sorting_and_filtering: App.apply_sorting_and_filtering.bind(App)
+                        })
+                        : null),
                 // Gallery
-                m("div.poke-gallery",
-                    m(InfinityScroll, {
-                        pageRequestParam: inf_scroll_cache_hash,
-                        preload: true,
-                        pageCount: gallery_fragment_size,
-                        loadingFooter: m("div", `Showing ${gallery_fragment_size * (latest_loaded_page + 1)}/${sorted_pokemon.length} Pokemon. Loading...`),
-                        pageRequest: (page_num, resolve) => {
-                            const slice_start = gallery_fragment_size * page_num;
-                            const slice_end = gallery_fragment_size * (page_num + 1);
-                            const page_items = sorted_pokemon.slice(slice_start, slice_end);
-                            resolve(page_items);
-                            latest_loaded_page = page_num;
-                            m.redraw();
-                        },
-                        processPageData: data => {
-                            return data.map(poke_idx => {
-                                const poke = game_data.pokemon[poke_idx];
-                                if (!Object.hasOwn(poke, "mithril_key")) {
-                                    if (poke.is_fused) {
-                                        poke.mithril_key = `${poke.head_id}.${poke.body_id}`;
-                                    } else {
-                                        poke.mithril_key = `${poke.head_id}`;
-                                    }
-                                }
-                                return m(PokeCard, {
-                                    key: poke.mithril_key,
-                                    poke,
-                                    head_name: game_data.pokemon_names[poke.head_id],
-                                    body_name: game_data.pokemon_names[poke.body_id],
-                                    poke_type_names: poke.types.map(id => game_data.types[id].name),
-                                    pokemon_names: game_data.pokemon_names,
-                                    sprites_metadata,
-                                    changed_sprites: filter_state.session_settings.changed_sprites
-                                });
-                            }).filter(card => card);
+                m("div.poke-gallery", [
+                    App.items_in_current_gallery_pages.map(poke_idx => {
+                        const poke = App.game_data.pokemon[poke_idx];
+                        if (!Object.hasOwn(poke, "mithril_key")) {
+                            if (poke.is_fused) {
+                                poke.mithril_key = `${poke.head_id}.${poke.body_id}`;
+                            } else {
+                                poke.mithril_key = `${poke.head_id}`;
+                            }
                         }
-                    }))
+                        return m(PokeCard, {
+                            key: poke.mithril_key,
+                            poke,
+                            head_name: App.game_data.pokemon_names[poke.head_id],
+                            body_name: App.game_data.pokemon_names[poke.body_id],
+                            poke_type_names: poke.types.map(id => App.game_data.types[id].name),
+                            pokemon_names: App.game_data.pokemon_names,
+                            sprites_metadata: App.sprites_metadata,
+                            changed_sprites: App.changed_sprites
+                        });
+                    }),
+                    App.gallery_has_more_pages ? m(InfiniteScroll, {
+                        has_more: App.gallery_has_more_pages,
+                        load_more: App.load_next_page.bind(App)
+                    }) : null])
             ];
         }
     });
@@ -297,19 +329,19 @@ async function main() {
                 }
             }
         }
-        const add_list = into_blacklist ? filter_state.name_blacklist : filter_state.name_whitelist;
-        const remove_list = into_blacklist ? filter_state.name_whitelist : filter_state.name_blacklist;
-        add_name_filter(game_data, game_data.pokemon_names, ids, add_list, remove_list, true, false);
+        const add_list = into_blacklist ? App.filter_state.name_blacklist : App.filter_state.name_whitelist;
+        const remove_list = into_blacklist ? App.filter_state.name_whitelist : App.filter_state.name_blacklist;
+        add_name_filter(App.game_data, App.game_data.pokemon_names, ids, add_list, remove_list, true, false);
         apply_sorting_and_filtering().then(() => m.redraw());
     }
 
     window.generate_random_party = function (party_size = 6) {
         let pokes = [];
-        if (sorted_pokemon.length <= party_size) {
-            pokes = sorted_pokemon;
+        if (App.filtered_and_sorted_pokemon_indices.length <= party_size) {
+            pokes = App.filtered_and_sorted_pokemon_indices;
         } else {
             const indices = new Set();
-            for (let i = sorted_pokemon.length - party_size; i < sorted_pokemon.length; i++) {
+            for (let i = App.filtered_and_sorted_pokemon_indices.length - party_size; i < App.filtered_and_sorted_pokemon_indices.length; i++) {
                 const t = Math.floor(Math.random() * (i + 1));
                 if (indices.has(t)) {
                     indices.add(i);
@@ -317,7 +349,7 @@ async function main() {
                     indices.add(t);
                 }
             }
-            pokes = Array.from(indices).map(i => game_data.pokemon[sorted_pokemon[i]]);
+            pokes = Array.from(indices).map(i => App.game_data.pokemon[App.filtered_and_sorted_pokemon_indices[i]]);
         }
         for (const poke of pokes) {
             window.open(details_url(poke));
@@ -325,7 +357,7 @@ async function main() {
     }
 
     window.enable_debug_filter = function (debug_url = "http://127.0.0.1:8080/search") {
-        filter_state.debug_filter_url = debug_url;
+        App.filter_state.debug_filter_url = debug_url;
         m.redraw();
     }
 }

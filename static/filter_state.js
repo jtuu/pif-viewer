@@ -62,10 +62,7 @@ export function default_filter_state() {
         only_show_hoenn: false,
         debug_filter_url: "",
         debug_query: "",
-        cache_buster: 0,
-        session_settings: {
-            changed_sprites: {}
-        }
+        cache_buster: 0
     };
 }
 
@@ -132,7 +129,6 @@ export function set_filter_state(filter_state, new_state) {
     filter_state.debug_filter_url = Object.hasOwn(new_state, "debug_filter_url") ? new_state.debug_filter_url : "";
     filter_state.debug_query = Object.hasOwn(new_state, "debug_query") ? new_state.debug_query : "";
     filter_state.cache_buster = Object.hasOwn(new_state, "cache_buster") ? new_state.cache_buster : 0;
-    filter_state.cache_buster = Object.hasOwn(new_state, "session_settings") ? new_state.session_settings : { changed_sprites: {} };
 
     // Try to detect legacy format
     const contains_nan_item = arr => arr.length > 0 && isNaN(arr[0]);
@@ -153,8 +149,22 @@ export function set_filter_state(filter_state, new_state) {
 
 export function load_state_from_local_storage(filter_state) {
     if (localStorage.filter_state) {
-        const str = localStorage.filter_state;
-        const state = JSON.parse(atob(str));
+        const hash = localStorage.filter_state;
+        const state = JSON.parse(atob(hash));
         set_filter_state(filter_state, state);
+        return hash;
     }
+    return "";
+}
+
+export function save_state_to_local_storage(filter_state) {
+    const serialized = JSON.stringify(filter_state, (k, v) => {
+        if (v instanceof Set) {
+            return Array.from(v);
+        }
+        return v;
+    });
+    const hash = btoa(serialized);
+    localStorage.filter_state = hash;
+    return hash;
 }

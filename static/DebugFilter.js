@@ -3,7 +3,7 @@ import { get_index_of_alt_name } from "./PokeCard.js";
 import { init_filter_workers } from "./worker_interface.js";
 
 export const DebugFilter = {
-    send_request(game_data, filter_state, sprites_metadata, filter_workers, apply_sorting_and_filtering, reset_scroll_cache) {
+    send_request(game_data, filter_state, sprites_metadata, changed_sprites, filter_workers, apply_sorting_and_filtering) {
         filter_state.debug_query = document.getElementById("debug_query").value;
         filter_state.cache_buster = Date.now();
         return m.request({
@@ -13,10 +13,10 @@ export const DebugFilter = {
             },
             background: true
         }).then(response => {
-            this.process_response(game_data, filter_state, filter_workers, sprites_metadata, apply_sorting_and_filtering, reset_scroll_cache, response);
+            this.process_response(game_data, filter_workers, sprites_metadata, changed_sprites, apply_sorting_and_filtering, response);
         });
     },
-    process_response(game_data, filter_state, filter_workers, sprites_metadata, apply_sorting_and_filtering, reset_scroll_cache, response) {
+    process_response(game_data, filter_workers, sprites_metadata, changed_sprites, apply_sorting_and_filtering, response) {
         const unfused_pat = /(\d+)([a-z]*)\.png/;
         const fused_pat = /(\d+)\.(\d+)([a-z]*)\.png/;
         const deduper = new Map();
@@ -33,14 +33,14 @@ export const DebugFilter = {
                 const head = game_data.unfused_pokemon.find(poke => poke.head_id === head_id);
                 const body = game_data.unfused_pokemon.find(poke => poke.head_id === body_id);
                 poke = fuse_pokemon(game_data.types, head, body);
-                filter_state.session_settings.changed_sprites[key] = alt ? get_index_of_alt_name(alt) : 0;
+                changed_sprites[key] = alt ? get_index_of_alt_name(alt) : 0;
             } else {
                 const match = img.match(unfused_pat);
                 const head_id = parseInt(match[1]);
                 const alt = match[2];
                 key = `${head_id}${alt}`;
                 poke = game_data.unfused_pokemon.find(poke => poke.head_id === head_id);
-                filter_state.session_settings.changed_sprites[key] = alt ? get_index_of_alt_name(alt) : 0;
+                changed_sprites[key] = alt ? get_index_of_alt_name(alt) : 0;
             }
             let dupe_count = 1;
             if (deduper.has(key)) {
@@ -69,24 +69,23 @@ export const DebugFilter = {
         }
 
         return apply_sorting_and_filtering().then(() => {
-            reset_scroll_cache();
             m.redraw();
         });
     },
     view(vnode) {
-        const { game_data, filter_state, sprites_metadata, filter_workers, apply_sorting_and_filtering, reset_scroll_cache } = vnode.attrs;
+        const { game_data, filter_state, sprites_metadata, changed_sprites, filter_workers, apply_sorting_and_filtering } = vnode.attrs;
         return m("div",
             m("input#debug_query", {
                 type: "text",
                 value: filter_state.debug_query,
                 onchange: e => {
                     e.redraw = false;
-                    this.send_request(game_data, filter_state, sprites_metadata, filter_workers, apply_sorting_and_filtering, reset_scroll_cache);
+                    this.send_request(game_data, filter_state, sprites_metadata, changed_sprites, filter_workers, apply_sorting_and_filtering);
                 },
                 onkeyup: e => {
                     e.redraw = false;
                     if (e.key === "Enter") {
-                        this.send_request(game_data, filter_state, sprites_metadata, filter_workers, apply_sorting_and_filtering, reset_scroll_cache);
+                        this.send_request(game_data, filter_state, sprites_metadata, changed_sprites, filter_workers, apply_sorting_and_filtering);
                     }
                 }
             }));
