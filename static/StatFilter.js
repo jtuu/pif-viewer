@@ -18,7 +18,7 @@ export const StatFilter = {
             m("div.stat-sum-sort", m("div", m("strong", "Sort by stat sum")),
                 m("div.stat-sort-checkboxes",
                     Object.keys(filter_state.stat_sorting_options).map(stat_name => {
-                        return m("label", { key: stat_name }, [
+                        return m("label", { key: stat_name, title: stat_tooltip[stat_name] }, [
                             m("input", {
                                 type: "checkbox",
                                 checked: filter_state.stat_sorting_options[stat_name],

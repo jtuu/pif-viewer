@@ -1,3 +1,5 @@
+export class JobCancellationException extends Error {}
+
 export function init_filter_workers(num_workers, game_data, sprites_metadata) {
     const chunk_size = Math.floor(game_data.pokemon.length / num_workers);
     const workers = [];
@@ -10,15 +12,32 @@ export function init_filter_workers(num_workers, game_data, sprites_metadata) {
 
     for (let i = 0; i < num_workers; i++) {
         const worker = new Worker("filter_worker.js");
+        worker.is_working = false;
         worker.await_message = () => {
             if (worker.message_listener) {
-                worker.message_listener.reject("Job timed out");
+                worker.message_listener.reject(new JobCancellationException());
+                worker.message_listener = null;
             }
             return new Promise((resolve, reject) => {
                 worker.message_listener = { resolve, reject };
             });
         };
+        worker.start_filter_job = filter_state => {
+            worker.is_working = true;
+            worker.postMessage({ topic: "filter", filter_state });
+        };
+        worker.cancel_job = () => {
+            if (worker.is_working) {
+                worker.is_working = false;
+                worker.postMessage({ topic: "cancel" });
+            }
+            if (worker.message_listener) {
+                worker.message_listener.reject(new JobCancellationException());
+                worker.message_listener = null;
+            }
+        };
         worker.onmessage = ({ data }) => {
+            worker.is_working = false;
             if (worker.message_listener) {
                 worker.message_listener.resolve(data);
                 worker.message_listener = null;
@@ -44,7 +63,7 @@ export function init_filter_workers(num_workers, game_data, sprites_metadata) {
 export async function sort_and_filter(pokemon, workers, filter_state) {
     const worker_results = await Promise.all(workers.map((w, i) => {
         const promise = w.await_message();
-        w.postMessage({ topic: "filter", filter_state });
+        w.start_filter_job(filter_state);
         return promise;
     }));
 
@@ -105,4 +124,10 @@ export async function sort_and_filter(pokemon, workers, filter_state) {
     }
 
     return filtered_pokemon;
+}
+
+export function cancel_all_jobs(workers) {
+    for (const worker of workers) {
+        worker.cancel_job();
+    }
 }

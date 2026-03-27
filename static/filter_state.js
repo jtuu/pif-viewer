@@ -1,4 +1,4 @@
-import { sort_and_filter } from "./worker_interface.js";
+import { JobCancellationException, sort_and_filter } from "./worker_interface.js";
 import { standard_types } from "./TypeFilter.js";
 
 export function default_filter_state() {
@@ -81,7 +81,7 @@ export async function apply_filter(filter_state, filter_workers, game_data) {
     try {
         result = await sort_and_filter(game_data.pokemon, filter_workers, filter_state);
     } catch (err) {
-        if (err === "Job timed out") {
+        if (err instanceof JobCancellationException) {
             return;
         }
         throw err;

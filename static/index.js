@@ -11,7 +11,7 @@ import { MoveFilter } from "./MoveFilter.js";
 import { hoenn_data } from "./hoenn_data.js";
 import { DebugFilter } from "./DebugFilter.js";
 import { TRIPLE_FUSION_ID_START, TRIPLE_FUSIONS_HARDCODED_DATA, generate_fusions } from "./fusion_utils.js"
-import { init_filter_workers } from "./worker_interface.js";
+import { cancel_all_jobs, init_filter_workers } from "./worker_interface.js";
 import { apply_filter, default_filter_state, load_state_from_local_storage, save_state_to_local_storage } from "./filter_state.js";
 import { InfiniteScroll } from "./InfiniteScroll.js"
 import { debounce } from "./debounce.js";
@@ -154,6 +154,7 @@ const App = (() => {
             if (this.is_loading) {
                 return;
             }
+            cancel_all_jobs(this.filter_workers);
             const result = await apply_filter(this.filter_state, this.filter_workers, this.game_data);
             this.set_gallery(result);
         },
@@ -185,7 +186,7 @@ async function main() {
         m.redraw();
     };
     on_window_resize(); // Call once at start
-    window.onresize = on_window_resize;
+    window.onresize = debounce(100, on_window_resize);
 
     download_files().then(files => {
         Object.assign(App.game_data, files.game_data);
