@@ -1,3 +1,5 @@
+import { RangeSliderInput } from "./RangeSliderInput.js";
+
 export const EvolutionFilter = {
     view(vnode) {
         const { filter_state, game_data } = vnode.attrs;
@@ -61,26 +63,18 @@ export const EvolutionFilter = {
                         m("span", "Min " + filter_state.evolution_level_range_filter_min),
                         m("span", filter_state.evolution_level_range_filter_max.toString() + " Max")),
                     m("div.evolution-level-range-inputs",
-                        m("input.evolution-level-range-input",
+                        m(RangeSliderInput,
                             {
-                                type: "range",
                                 min: 1,
                                 max: 100,
                                 disabled: !filter_state.evolution_level_range_filter_enabled,
-                                value: filter_state.evolution_level_range_filter_min,
-                                onchange: e => {
-                                    filter_state.evolution_level_range_filter_min = parseInt(e.target.value);
-                                }
-                            }),
-                        m("input.evolution-level-range-input",
-                            {
-                                type: "range",
-                                min: 1,
-                                max: 100,
-                                disabled: !filter_state.evolution_level_range_filter_enabled,
-                                value: filter_state.evolution_level_range_filter_max,
-                                onchange: e => {
-                                    filter_state.evolution_level_range_filter_max = parseInt(e.target.value);
+                                left_value: filter_state.evolution_level_range_filter_min,
+                                right_value: filter_state.evolution_level_range_filter_max,
+                                on_left_input: value => {
+                                    filter_state.evolution_level_range_filter_min = value;
+                                },
+                                on_right_input: value => {
+                                    filter_state.evolution_level_range_filter_max = value;
                                 }
                             }))),
                 m("fieldset",
@@ -115,25 +109,25 @@ export const EvolutionFilter = {
                             }
                         }), "No")),
                     m("div",
-                            m("label", m("input", {
-                                type: "radio",
-                                name: "evolution-item-filter-condition",
-                                disabled: !filter_state.evolution_item_filter_enabled,
-                                value: "either",
-                                checked: !filter_state.evolution_item_filter_condition,
-                                onchange: e => {
-                                    filter_state.evolution_item_filter_condition = !e.target.checked;
-                                }
-                            }), "Head OR body"),
-                            m("label", m("input", {
-                                type: "radio",
-                                name: "evolution-item-filter-condition",
-                                disabled: !filter_state.evolution_item_filter_enabled,
-                                value: "both",
-                                checked: filter_state.evolution_item_filter_condition,
-                                onchange: e => {
-                                    filter_state.evolution_item_filter_condition = e.target.checked;
-                                }
-                            }), "Head AND body")))));
+                        m("label", m("input", {
+                            type: "radio",
+                            name: "evolution-item-filter-condition",
+                            disabled: !filter_state.evolution_item_filter_enabled,
+                            value: "either",
+                            checked: !filter_state.evolution_item_filter_condition,
+                            onchange: e => {
+                                filter_state.evolution_item_filter_condition = !e.target.checked;
+                            }
+                        }), "Head OR body"),
+                        m("label", m("input", {
+                            type: "radio",
+                            name: "evolution-item-filter-condition",
+                            disabled: !filter_state.evolution_item_filter_enabled,
+                            value: "both",
+                            checked: filter_state.evolution_item_filter_condition,
+                            onchange: e => {
+                                filter_state.evolution_item_filter_condition = e.target.checked;
+                            }
+                        }), "Head AND body")))));
     }
 };

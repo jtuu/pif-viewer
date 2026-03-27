@@ -1,13 +1,18 @@
 export const RangeSliderInput = {
     view(vnode) {
+        const disabled = Object.hasOwn(vnode.attrs, "disabled") ? vnode.attrs.disabled : false;
         const percent1 = (vnode.attrs.left_value / vnode.attrs.max) * 100;
         const percent2 = (vnode.attrs.right_value / vnode.attrs.max) * 100;
         const gradient = `background: linear-gradient(to right, #e5e7eb ${percent1}%, #2563eb ${percent1}%, #2563eb ${percent2}%, #e5e7eb ${percent2}%)`;
-        return m("div.range-slider-container",
+        return m("div.range-slider-container" + (disabled ? ".disabled" : ""),
             m("div.range-slider-track",
                 {
                     style: gradient,
                     onmousedown: e => {
+                        if (disabled) {
+                            e.redraw = false;
+                            return;
+                        }
                         // Replicate native behavior of clicking on the track to set the value
                         const left_slider = e.target.parentElement.querySelector(".range-slider-left");
                         const right_slider = e.target.parentElement.querySelector(".range-slider-right");
@@ -42,7 +47,8 @@ export const RangeSliderInput = {
                     type: "range",
                     min: vnode.attrs.min,
                     max: vnode.attrs.max,
-                    value: vnode.attrs.left_value
+                    value: vnode.attrs.left_value,
+                    disabled
                 }),
             m("input.range-slider-right",
                 {
@@ -62,7 +68,8 @@ export const RangeSliderInput = {
                     type: "range",
                     min: vnode.attrs.min,
                     max: vnode.attrs.max,
-                    value: vnode.attrs.right_value
+                    value: vnode.attrs.right_value,
+                    disabled
                 }));
     }
 }

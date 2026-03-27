@@ -352,3 +352,21 @@ hr {
     z-index: -1;
     cursor: pointer;
 }
+
+.range-slider-container input[type="range"]:disabled::-webkit-slider-thumb {
+    background: #9ca3af;
+    cursor: default;
+    border-color: #e5e7eb;
+    box-shadow: none;
+}
+
+.range-slider-container input[type="range"]:disabled::-moz-range-thumb {
+    background: #9ca3af;
+    cursor: default;
+    border-color: #e5e7eb;
+}
+
+.range-slider-container.disabled .range-slider-track {
+    background: #d1d5db !important;
+    cursor: default;
+}
