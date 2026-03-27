@@ -14,6 +14,7 @@ import { TRIPLE_FUSION_ID_START, TRIPLE_FUSIONS_HARDCODED_DATA, generate_fusions
 import { init_filter_workers } from "./worker_interface.js";
 import { apply_filter, default_filter_state, load_state_from_local_storage, save_state_to_local_storage } from "./filter_state.js";
 import { InfiniteScroll } from "./InfiniteScroll.js"
+import { debounce } from "./debounce.js";
 
 function preprocess_game_data(game_data, sprites_metadata) {
     // Add hoenn data
@@ -200,6 +201,8 @@ async function main() {
         App.apply_sorting_and_filtering().then(() => m.redraw());
     });
 
+    const debounced_filter_and_redraw = debounce(100, () => App.apply_sorting_and_filtering().then(() => m.redraw()));
+
     m.mount(document.body, {
         oninit() {
             App.load_next_page();
@@ -208,7 +211,7 @@ async function main() {
             const old_state = App.filter_state_hash;
             App.filter_state_hash = save_state_to_local_storage(App.filter_state);
             if (old_state !== App.filter_state_hash) {
-                App.apply_sorting_and_filtering().then(() => m.redraw());
+                debounced_filter_and_redraw();
             }
         },
         view() {
