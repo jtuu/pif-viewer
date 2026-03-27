@@ -31,6 +31,16 @@ export function default_filter_state() {
             "BST": 0,
             "max(ATK, SPA)": 0
         },
+        stat_maximum_filter: {
+            "HP": 255,
+            "ATK": 255,
+            "DEF": 255,
+            "SPA": 255,
+            "SPD": 255,
+            "SPE": 255,
+            "BST": 1000,
+            "max(ATK, SPA)": 255
+        },
         type_filter_enabled: false,
         type_filter_condition: false,
         type_filter: new Set(),
@@ -86,6 +96,9 @@ export function set_filter_state(filter_state, new_state) {
     filter_state.stat_sorting_options = new_state.stat_sorting_options;
     filter_state.stat_sorting_direction = new_state.stat_sorting_direction;
     filter_state.stat_minimum_filter = new_state.stat_minimum_filter;
+    filter_state.stat_maximum_filter = Object.hasOwn(new_state, "stat_maximum_filter")
+        ? Object.assign(filter_state.stat_maximum_filter, new_state.stat_maximum_filter)
+        : filter_state.stat_maximum_filter;
     filter_state.type_filter_enabled = Boolean(new_state.type_filter_enabled);
     filter_state.type_filter_condition = new_state.type_filter_condition;
     filter_state.type_filter = new Set(new_state.type_filter);

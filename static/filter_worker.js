@@ -195,7 +195,7 @@ function get_expert_moves(poke, moves, poke_name_map, type_name_map, move_name_m
 function filter(filter_state) {
     const { game_data, sprites_metadata, type_name_map, poke_name_map, move_name_map, expert_moves } = global_data;
 
-    const min_stat_keys = Object.keys(filter_state.stat_minimum_filter).filter(k => filter_state.stat_minimum_filter[k]);
+    const stat_filter_keys = Object.keys(filter_state.stat_minimum_filter).filter(k => filter_state.stat_minimum_filter[k]);
 
     const enabled_resistance_filters = Object.entries(filter_state.resistance_filter).map(([name, filter]) => {
         if (filter.value !== null) {
@@ -302,13 +302,23 @@ function filter(filter_state) {
             return false;
         }
 
-        const minimum_stat_filter_passed = min_stat_keys.every(key => {
+        const minimum_stat_filter_passed = stat_filter_keys.every(key => {
             if (key === "max(ATK, SPA)") {
                 return filter_state.stat_minimum_filter[key] < Math.max(poke.atk, poke.spa);
             }
             return filter_state.stat_minimum_filter[key] < poke[key.toLowerCase()];
         });
         if (!minimum_stat_filter_passed) {
+            return false;
+        }
+
+        const maximum_stat_filter_passed = stat_filter_keys.every(key => {
+            if (key === "max(ATK, SPA)") {
+                return filter_state.stat_maximum_filter[key] > Math.max(poke.atk, poke.spa);
+            }
+            return filter_state.stat_maximum_filter[key] > poke[key.toLowerCase()];
+        });
+        if (!maximum_stat_filter_passed) {
             return false;
         }
 
