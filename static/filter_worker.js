@@ -225,19 +225,11 @@ async function filter(filter_state) {
         }
     }).filter(x => x);
 
-    const cancel_check_interval = Math.floor(game_data.pokemon.length / 4);
-    let i = 0;
+    const CANCEL_CHECK_INTERVAL_MS = 16;
+    let prev_yield_time = performance.now();
+
     const filtered_pokemon_ids = [];
     for (const poke of game_data.pokemon) {
-        if (++i % cancel_check_interval === 0) {
-            // Only check cancel a few times because yielding is very slow
-            await yield_thread();
-            if (cancel_job) {
-                cancel_job = false;
-                throw new JobCancellationException();
-            }
-        }
-
         const highlighted_names_filter_passed = filter_state.highlighted_names.size === 0 ||
             (filter_state.highlighted_names.has(poke.head_id) || filter_state.highlighted_names.has(poke.body_id)) ||
             (poke.triple_fusion_ids && poke.triple_fusion_ids.some(id => filter_state.highlighted_names.has(id)));
@@ -511,6 +503,16 @@ async function filter(filter_state) {
 
         // Passed all filters
         filtered_pokemon_ids.push(poke.index);
+
+        if (performance.now() - prev_yield_time >= CANCEL_CHECK_INTERVAL_MS) {
+            // Only check cancel every few ms because yielding is very slow
+            await yield_thread();
+            prev_yield_time = performance.now();
+            if (cancel_job) {
+                cancel_job = false;
+                throw new JobCancellationException();
+            }
+        }
     }
 
     // Only transfer indices instead of full pokemon data because it's much faster

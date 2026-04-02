@@ -1,4 +1,3 @@
-import { JobCancellationException, sort_and_filter } from "./worker_interface.js";
 import { standard_types } from "./TypeFilter.js";
 
 export function default_filter_state() {
@@ -74,20 +73,6 @@ export function default_filter_state() {
         debug_query: "",
         cache_buster: 0
     };
-}
-
-export async function apply_filter(filter_state, filter_workers, game_data) {
-    let result;
-    try {
-        result = await sort_and_filter(game_data.pokemon, filter_workers, filter_state);
-    } catch (err) {
-        if (err instanceof JobCancellationException) {
-            return;
-        }
-        throw err;
-    }
-
-    return result;
 }
 
 export function set_filter_state(filter_state, new_state) {
