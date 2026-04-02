@@ -241,16 +241,6 @@ export const NameFilter = {
             },
                 m("optgroup", { label: "Blacklist" }, make_optgroup(filter_state.name_blacklist)),
                 m("optgroup", { label: "Whitelist" }, make_optgroup(filter_state.name_whitelist))),
-            m("div",
-                m("span", "Add presets: "),
-                m("button", {
-                    title: legendaries.join("\n"),
-                    onclick: e => add_to_blacklist(names_to_ids(legendaries))
-                }, "Legendaries"),
-                m("button", {
-                    title: other_strong.join("\n"),
-                    onclick: e => add_to_blacklist(names_to_ids(other_strong))
-                }, "Other strong")),
             m("div", m("label", { title: "Both halves of the fusion must exist in whitelist" },
                 m("input", {
                     type: "checkbox",
@@ -268,6 +258,17 @@ export const NameFilter = {
                             filter_state.name_blacklist_half_only = e.target.checked;
                         }
                     }), "Relaxed blacklist")),
+            m("hr"),
+            m("div",
+                m("span", "Add presets: "),
+                m("button", {
+                    title: legendaries.join("\n"),
+                    onclick: e => add_to_blacklist(names_to_ids(legendaries))
+                }, "Legendaries"),
+                m("button", {
+                    title: other_strong.join("\n"),
+                    onclick: e => add_to_blacklist(names_to_ids(other_strong))
+                }, "Other strong")),
             m("hr"),
             m("label", "Import from savefile ",
                 m("input", {
