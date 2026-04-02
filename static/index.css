@@ -370,3 +370,9 @@ hr {
     background: #d1d5db !important;
     cursor: default;
 }
+
+.vertical-rule {
+    display: inline;
+    margin: 0 4px;
+    border: 1px inset #808080;
+}

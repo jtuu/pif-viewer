@@ -83,7 +83,46 @@ export function add_name_filter(game_data, unfused_names, id_, add_list, remove_
     return ok;
 }
 
+function load_names_from_save_file(bytes, game_data, filter_state, into_blacklist = false) {
+    const save_data = marshal.load(bytes, {
+        hashSymbolKeysToString: true,
+        ivarToString: ""
+    });
+    const ids = [];
+    for (const poke of save_data.player.party) {
+        if (!poke) continue;
+        if (poke.species_data.id_number > game_data.nb_pokemon) {
+            ids.push(poke.species_data.head_pokemon.id_number);
+            ids.push(poke.species_data.body_pokemon.id_number);
+        } else {
+            ids.push(poke.species_data.id_number);
+        }
+    }
+    for (const box of save_data.storage_system.boxes) {
+        for (const poke of box.pokemon) {
+            if (!poke) continue;
+            if (poke.species_data.id_number > game_data.nb_pokemon) {
+                ids.push(poke.species_data.head_pokemon.id_number);
+                ids.push(poke.species_data.body_pokemon.id_number);
+            } else {
+                ids.push(poke.species_data.id_number);
+            }
+        }
+    }
+    const add_list = into_blacklist ? filter_state.name_blacklist : filter_state.name_whitelist;
+    const remove_list = into_blacklist ? filter_state.name_whitelist : filter_state.name_blacklist;
+    add_name_filter(game_data, game_data.pokemon_names, ids, add_list, remove_list, filter_state.name_filter_add_all_evolutions, false);
+    return ids.length;
+}
+
 export const NameFilter = {
+    savefile_import_result: "",
+    show_savefile_import_error(err) {
+        this.savefile_import_result = "❌ Failed to import savefile";
+        if (err.message) {
+            this.savefile_import_result += ": " + err.message;
+        }
+    },
     view(vnode) {
         const { filter_state, game_data, unfused_names } = vnode.attrs;
         const add_to_blacklist = names => add_name_filter(game_data, unfused_names, names, filter_state.name_blacklist, filter_state.name_whitelist, filter_state.name_filter_add_all_evolutions);
@@ -203,10 +242,13 @@ export const NameFilter = {
                 m("optgroup", { label: "Blacklist" }, make_optgroup(filter_state.name_blacklist)),
                 m("optgroup", { label: "Whitelist" }, make_optgroup(filter_state.name_whitelist))),
             m("div",
+                m("span", "Add presets: "),
                 m("button", {
+                    title: legendaries.join("\n"),
                     onclick: e => add_to_blacklist(names_to_ids(legendaries))
                 }, "Legendaries"),
                 m("button", {
+                    title: other_strong.join("\n"),
                     onclick: e => add_to_blacklist(names_to_ids(other_strong))
                 }, "Other strong")),
             m("div", m("label", { title: "Both halves of the fusion must exist in whitelist" },
@@ -216,14 +258,51 @@ export const NameFilter = {
                     onchange: e => {
                         filter_state.exclusive_name_whitelist = e.target.checked;
                     }
-                }), "Strict whitelist")),
-            m("div", m("label", { title: "One half of the fusion is allowed to exist in blacklist, but not both" },
+                }), "Strict whitelist"),
+                m("span.vertical-rule"),
+                m("label", { title: "One half of the fusion is allowed to exist in blacklist, but not both" },
+                    m("input", {
+                        type: "checkbox",
+                        checked: filter_state.name_blacklist_half_only,
+                        onchange: e => {
+                            filter_state.name_blacklist_half_only = e.target.checked;
+                        }
+                    }), "Relaxed blacklist")),
+            m("hr"),
+            m("label", "Import from savefile ",
                 m("input", {
-                    type: "checkbox",
-                    checked: filter_state.name_blacklist_half_only,
+                    type: "file",
+                    accept: ".rxdata",
                     onchange: e => {
-                        filter_state.name_blacklist_half_only = e.target.checked;
+                        // Returning a promise makes mithril defer the view update until it resolves
+                        return new Promise((resolve, reject) => {
+                            if (e.target.files.length < 1) return resolve();
+                            const file = e.target.files[0];
+                            // Read file using FileReader
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                try {
+                                    // Parse file
+                                    const bytes = reader.result;
+                                    const whitelist_len_before = filter_state.name_whitelist.size;
+                                    const num_found = load_names_from_save_file(bytes, game_data, filter_state, false);
+                                    const num_added = filter_state.name_whitelist.size - whitelist_len_before;
+                                    const msg = `✔️ Found ${num_found} pokemon in savefile. Added ${num_added} new pokemon to whitelist.`
+                                    vnode.state.savefile_import_result = msg;
+                                    resolve(); // Allow mithril to update view
+                                } catch (err) {
+                                    this.show_savefile_import_error(err);
+                                    reject(err);
+                                }
+                            };
+                            reader.onerror = () => {
+                                this.show_savefile_import_error(reader.error);
+                                reject(reader.error);
+                            };
+                            reader.readAsArrayBuffer(file);
+                        });
                     }
-                }), "Relaxed blacklist")));
+                })),
+            m("div#savefile-import-result", vnode.state.savefile_import_result));
     }
 };

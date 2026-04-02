@@ -305,40 +305,6 @@ async function main() {
         }
     });
 
-    // Don't feel like making UI for this so just gonna expose this function
-    window.load_names_from_save_file = async function (url, into_blacklist = false) {
-        const downloaded_bytes = await (await fetch(url)).arrayBuffer();
-        const save_data = marshal.load(downloaded_bytes, {
-            hashSymbolKeysToString: true,
-            ivarToString: ""
-        });
-        const ids = [];
-        for (const poke of save_data.player.party) {
-            if (!poke) continue;
-            if (poke.species_data.id_number > game_data.nb_pokemon) {
-                ids.push(poke.species_data.head_pokemon.id_number);
-                ids.push(poke.species_data.body_pokemon.id_number);
-            } else {
-                ids.push(poke.species_data.id_number);
-            }
-        }
-        for (const box of save_data.storage_system.boxes) {
-            for (const poke of box.pokemon) {
-                if (!poke) continue;
-                if (poke.species_data.id_number > game_data.nb_pokemon) {
-                    ids.push(poke.species_data.head_pokemon.id_number);
-                    ids.push(poke.species_data.body_pokemon.id_number);
-                } else {
-                    ids.push(poke.species_data.id_number);
-                }
-            }
-        }
-        const add_list = into_blacklist ? App.filter_state.name_blacklist : App.filter_state.name_whitelist;
-        const remove_list = into_blacklist ? App.filter_state.name_whitelist : App.filter_state.name_blacklist;
-        add_name_filter(App.game_data, App.game_data.pokemon_names, ids, add_list, remove_list, true, false);
-        apply_sorting_and_filtering().then(() => m.redraw());
-    }
-
     window.generate_random_party = function (party_size = 6) {
         let pokes = [];
         if (App.filtered_and_sorted_pokemon_indices.length <= party_size) {
