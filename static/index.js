@@ -16,7 +16,30 @@ import { default_filter_state, load_state_from_local_storage, save_state_to_loca
 import { InfiniteScroll } from "./InfiniteScroll.js"
 import { debounce } from "./debounce.js";
 
-function preprocess_game_data(game_data, sprites_metadata) {
+async function preprocess_game_data(data_version, game_data, sprites_metadata) {
+    // Put a default sprite entry for triple fusions
+    for (const head_id of Object.keys(TRIPLE_FUSIONS_HARDCODED_DATA)) {
+        const triple_fusion_ids = TRIPLE_FUSIONS_HARDCODED_DATA[head_id];
+        sprites_metadata.sprites[head_id] = {
+            base_name: triple_fusion_ids.join("."),
+            has_main: true,
+            is_fused: true,
+            alt_count: 0,
+            main_artists: [],
+            alt_artists: {}
+        };
+    }
+
+    // Try get cached game data
+    const cached = await idbKeyval.get(data_version);
+    if (cached) {
+        return { game_data: cached, sprites_metadata };
+    } else {
+        // Delete any old invalid cache
+        await idbKeyval.clear();
+    }
+    // Otherwise generate game data
+
     // Add hoenn data
     for (const poke of game_data.pokemon) {
         poke.is_hoenn = false;
@@ -62,15 +85,6 @@ function preprocess_game_data(game_data, sprites_metadata) {
 
         if (poke.head_id in TRIPLE_FUSIONS_HARDCODED_DATA) {
             poke.triple_fusion_ids = TRIPLE_FUSIONS_HARDCODED_DATA[poke.head_id];
-            // Put a default sprite entry for triple fusions
-            sprites_metadata.sprites[poke.head_id] = {
-                base_name: poke.triple_fusion_ids.join("."),
-                has_main: true,
-                is_fused: true,
-                alt_count: 0,
-                main_artists: [],
-                alt_artists: {}
-            };
         }
 
         // Put types in an array
@@ -112,19 +126,30 @@ function preprocess_game_data(game_data, sprites_metadata) {
         game_data.pokemon_by_name[name] = parseInt(id);
     }
 
+    // Save generated game data to cache
+    await idbKeyval.set(data_version, game_data);
+
     return { game_data, sprites_metadata };
 }
 
 async function download_files() {
+    const downloads = await Promise.all([
+        fetch("sprites_metadata.json"),
+        fetch("game_data.json"),
+    ]);
+
+    const game_data_response = downloads[1];
+    const game_data_version = game_data_response.headers.get("ETag") ?? game_data_response.headers.get("Last-Modified");
+
     const files = await Promise.all([
-        fetch("sprites_metadata.json").then(res => res.json()),
-        fetch("game_data.json").then(res => res.json())
+        downloads[0].json(),
+        downloads[1].json(),
     ]);
 
     const sprites_metadata = files[0];
     const game_data = files[1];
 
-    return preprocess_game_data(game_data, sprites_metadata);
+    return preprocess_game_data(game_data_version, game_data, sprites_metadata);
 }
 
 const App = (() => {
@@ -147,6 +172,18 @@ const App = (() => {
         filter_workers: [],
         changed_sprites: {},
 
+        init_window_resize_handler() {
+            // Set number of items to load when scrolling based on window size
+            const on_window_resize = () => {
+                const card_width = 192 + 10 * 2 + 10 * 2;
+                const card_height = 241;
+                const cards_per_row = Math.floor(window.innerWidth / card_width);
+                this.gallery_fragment_size = cards_per_row * Math.floor(window.innerHeight / card_height);
+                m.redraw();
+            };
+            on_window_resize(); // Call once at start
+            window.onresize = debounce(100, on_window_resize);
+        },
         reset_filter_state() {
             Object.assign(this.filter_state, default_filter_state());
         },
@@ -185,16 +222,7 @@ const App = (() => {
 })();
 
 async function main() {
-    // Set number of items to load when scrolling based on window size
-    const on_window_resize = () => {
-        const card_width = 192 + 10 * 2 + 10 * 2;
-        const card_height = 241;
-        const cards_per_row = Math.floor(window.innerWidth / card_width);
-        App.gallery_fragment_size = cards_per_row * Math.floor(window.innerHeight / card_height);
-        m.redraw();
-    };
-    on_window_resize(); // Call once at start
-    window.onresize = debounce(100, on_window_resize);
+    App.init_window_resize_handler();
 
     download_files().then(files => {
         Object.assign(App.game_data, files.game_data);
