@@ -86,8 +86,10 @@ export function add_name_filter(game_data, unfused_names, id_, add_list, remove_
 function load_names_from_save_file(bytes, game_data, filter_state, into_blacklist = false) {
     const save_data = marshal.load(bytes, {
         hashSymbolKeysToString: true,
-        ivarToString: ""
+        ivarToString: "",
+        string: "binary", // There is some kind of problem with string encoding but we don't need to read any strings so just leave them raw
     });
+    console.log(save_data)
     const ids = [];
     for (const poke of save_data.player.party) {
         if (!poke) continue;
