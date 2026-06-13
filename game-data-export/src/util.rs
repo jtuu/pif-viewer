@@ -6,9 +6,28 @@ use thurgood::{
     RbType,
 };
 
-pub fn read_ruby_file(path: &PathBuf) -> Result<RbAny> {
-    let bytes =
-        std::fs::read(path).with_context(|| format!("Failed to read file '{}'", path.display()))?;
+fn xor_buffer(bytes: Vec<u8>, key: &[u8]) -> Vec<u8> {
+    return bytes
+        .iter()
+        .enumerate()
+        .map(|(i, b)| b ^ key[i % key.len()])
+        .collect();
+}
+
+pub fn read_ruby_file(path: &PathBuf, is_xored: bool) -> Result<RbAny> {
+    let bytes = {
+        let bytes = std::fs::read(path)
+            .with_context(|| format!("Failed to read file '{}'", path.display()))?;
+        if is_xored {
+            let key = [
+                0x4A, 0x8F, 0x2C, 0xE1, 0x73, 0xB5, 0x96, 0x0D, 0x5E, 0xA2, 0x3F, 0xC7, 0x81, 0x14,
+                0x6B, 0xD9,
+            ];
+            xor_buffer(bytes, &key)
+        } else {
+            bytes
+        }
+    };
     return thurgood::rc::from_reader(bytes.as_slice())
         .with_context(|| format!("Failed to parse ruby file '{}'", path.display()));
 }

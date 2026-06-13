@@ -20,6 +20,7 @@ enum EvolutionKind {
     Shedinja(u8),
     Ninjask(u8),
     DayHoldItem(String),
+    TradeItem(String),
 }
 
 #[derive(Serialize, Clone)]
@@ -53,7 +54,10 @@ impl Evolution {
             "Ninjask" => EvolutionKind::Ninjask(param.as_int().unwrap() as u8),
             "DayHoldItem" => {
                 EvolutionKind::DayHoldItem(param.as_symbol().unwrap().as_str().unwrap().to_owned())
-            }
+            },
+            "TradeItem" => {
+                EvolutionKind::TradeItem(param.as_symbol().unwrap().as_str().unwrap().to_owned())
+            },
             _ => panic!("Unexpected evolution condition {}", condition),
         };
 
@@ -221,6 +225,7 @@ pub fn export_data(
     output_dir_path: &PathBuf,
     output_format: OutputFormat,
     export_fusions: bool,
+    data_is_xored: bool,
 ) -> Result<()> {
     let pokes_with_special_names = HashMap::from([
         ("NIDORANfE", "Nidoran-Female"),
@@ -238,10 +243,10 @@ pub fn export_data(
         ("MINIOR_C", "Minior-Core"),
     ]);
 
-    let ability_data = read_ruby_file(abilities_file_path)?;
-    let species_data = read_ruby_file(species_file_path)?;
-    let type_data = read_ruby_file(types_file_path)?;
-    let moves_data = read_ruby_file(moves_file_path)?;
+    let ability_data = read_ruby_file(abilities_file_path, data_is_xored)?;
+    let species_data = read_ruby_file(species_file_path, data_is_xored)?;
+    let type_data = read_ruby_file(types_file_path, data_is_xored)?;
+    let moves_data = read_ruby_file(moves_file_path, data_is_xored)?;
 
     let mut abilities = HashMap::new();
     let mut pokemon_names = HashMap::new();
@@ -360,7 +365,15 @@ pub fn export_data(
             let poke_obj = poke_any.as_object().unwrap();
             let id: u32 = poke_obj.get_field("@id_number");
             let sym: String = poke_obj.get_field("@id");
-            let name: String = if let Some(special_name) = pokes_with_special_names.get(&*sym) {
+            let name: String = if id == 573 {
+                "Shellos-East".to_owned()
+            } else if id == 574 {
+                "Gastrodon-East".to_owned()
+            } else if id == 575 {
+                "Shellos-West".to_owned()
+            } else if id == 576 {
+                "Gastrodon-West".to_owned()
+            } else if let Some(special_name) = pokes_with_special_names.get(&*sym) {
                 special_name.to_string()
             } else {
                 poke_obj.get_field("@real_name")

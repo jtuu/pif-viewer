@@ -43,6 +43,8 @@ struct Args {
     input_sprites_are_split: bool,
     #[arg(long)]
     auto_download_sprites: bool,
+    #[arg(long)]
+    data_is_xored: bool,
 }
 
 fn main() -> Result<()> {
@@ -57,6 +59,7 @@ fn main() -> Result<()> {
             &args.output_dir,
             args.format,
             args.fusions_export,
+            args.data_is_xored,
         )?;
     }
 
