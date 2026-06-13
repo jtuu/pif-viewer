@@ -8,7 +8,6 @@ import { EvolutionFilter } from "./EvolutionFilter.js";
 import { ConfirmingButton } from "./ConfirmingButton.js";
 import { SpriteFilter } from "./SpriteFilter.js";
 import { MoveFilter } from "./MoveFilter.js";
-import { hoenn_data } from "./hoenn_data.js";
 import { DebugFilter } from "./DebugFilter.js";
 import { TRIPLE_FUSION_ID_START, TRIPLE_FUSIONS_HARDCODED_DATA, generate_fusions } from "./fusion_utils.js"
 import { cancel_all_jobs, init_filter_workers, JobCancellationException, sort_and_filter } from "./worker_interface.js";
@@ -39,21 +38,6 @@ async function preprocess_game_data(data_version, game_data, sprites_metadata) {
         await idbKeyval.clear();
     }
     // Otherwise generate game data
-
-    // Add hoenn data
-    for (const poke of game_data.pokemon) {
-        poke.is_hoenn = false;
-    }
-    for (const poke of hoenn_data.pokemon) {
-        poke.is_hoenn = true;
-    }
-    for (const key of Object.keys(hoenn_data.pokemon_names)) {
-        game_data.pokemon_names[key] = hoenn_data.pokemon_names[key];
-    }
-    for (const key of Object.keys(hoenn_data.evolutions)) {
-        game_data.evolutions[key] = hoenn_data.evolutions[key];
-    }
-    game_data.pokemon = game_data.pokemon.concat(hoenn_data.pokemon);
     game_data.unfused_pokemon = game_data.pokemon.slice();
 
     if (!game_data.contains_fusions) {
