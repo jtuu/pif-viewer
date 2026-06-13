@@ -55,6 +55,11 @@ export const AbilityFilter = {
             },
                 abilities_in_listing
                     .sort((a, b) => game_data.abilities[a].name.localeCompare(game_data.abilities[b].name))
-                    .map(id => m("option", { label: game_data.abilities[id].name, value: id, selected: filter_state.ability_filter.has(id) }))));
+                    .map(id => m("option", {
+                        key: game_data.abilities[id].name,
+                        label: game_data.abilities[id].name,
+                        value: id,
+                        selected: filter_state.ability_filter.has(id)
+                    }))));
     }
 };
